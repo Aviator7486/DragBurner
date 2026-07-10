@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+    <title>92 Notchback vs 84 Firebird - 1/4 Mile Showdown</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #111;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Base Game Container optimized for cross-device scaling */
+        #game-container {
+            position: absolute;
+            width: 932px;
+            height: 430px;
+            background: #000;
+            overflow: hidden;
+            border: 4px solid #333;
+            border-radius: 40px;
+            transform-origin: center center;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Top HUD Layout */
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 15px;
+            background: rgba(0,0,0,0.85);
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            color: #fff;
+            pointer-events: none;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .hud-val { color: #0f0; }
+
+        /* POV & Stage Buttons */
+        #pov-toggle {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            z-index: 11;
+            padding: 8px 12px;
+            background: #222;
+            color: #fff;
+            border: 2px solid #555;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #stage-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            z-index: 11;
+            padding: 8px 12px;
+            background: #d4a373;
+            color: #000;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Control Zones */
+        .control-zone {
+            position: absolute;
+            bottom: 15px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        #left-controls {
+            left: 30px;
+            width: 110px;
+            height: 224px;
+        }
+        #right-controls {
+            right: 30px;
+            width: 216px; 
+            height: 312px; 
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #333, #111);
+            border: 3px solid #555;
+            color: #fff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.6);
+            touch-action: none;
+        }
+        .btn:active, .btn.active {
+            background: linear-gradient(135deg, #111, #000);
+            border-color: #888;
+            box-shadow: inset 0 3px 5px rgba(0,0,0,0.8);
+        }
+
+        #btn-gas { height: 110px; background: linear-gradient(135deg, #228b22, #004d00); border-color: #00ff00; font-size: 20px; }
+        #btn-clutch-l { height: 99px; background: linear-gradient(135deg, #444, #222); border-color: #777; font-size: 16px; } 
+        #btn-clutch-r { height: 45px; background: linear-gradient(135deg, #444, #222); border-color: #777; font-size: 14px; width: 100%; } 
+
+        .nos-row {
+            display: flex;
+            gap: 10px;
+            height: 45px; 
+            width: 100%;
+        }
+        #btn-nos-arm { flex: 1; background: linear-gradient(135deg, #8b0000, #4d0000); border-color: #ff0000; font-size: 10px; }
+        #btn-nos-arm.armed { background: #ff3333; border-color: #fff; color: #000; animation: pulse 0.5s infinite alternate; }
+        #btn-nos-launch { flex: 1; background: linear-gradient(135deg, #00008b, #00004d); border-color: #0000ff; font-size: 10px; }
+        #btn-nos-launch.active { background: #3333ff; border-color: #fff; }
+
+        .shifter-quadrant {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 6px;
+            height: 198px; 
+            background: #1a1a1a;
+            padding: 6px;
+            border-radius: 14px;
+            border: 3px solid #444;
+            touch-action: none; 
+        }
+        .shift-gate {
+            background: #0a0a0a;
+            border: 2px solid #252525;
+            color: #888;
+            font-size: 21px; 
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        .shift-gate.active {
+            background: #ffcc00;
+            color: #000;
+            border-color: #fff;
+            box-shadow: 0 0 8px #ffcc00;
+        }
+        .shift-gate.blank { opacity: 0.1; pointer-events: none; }
+
+        @keyframes pulse {
+            from { box-shadow: 0 0 2px #ff0000; }
+            to { box-shadow: 0 0 12px #ff0000; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <button id="pov-toggle">POV: OUTSIDE</button>
+    <button id="stage-btn">STAGE CAR</button>
+
+    <div id="hud">
+        <div>TIME: <span id="hud-time" class="hud-val">0.00s</span></div>
+        <div>DIST: <span id="hud-dist" class="hud-val">0 ft</span></div>
+        <div>GEAR: <span id="hud-gear" class="hud-val">N</span></div>
+        <div>RPM: <span id="hud-rpm" class="hud-val">1000</span></div>
+        <div>MPH: <span id="hud-mph" class="hud-val">0</span></div>
+        <div>AI DIST: <span id="hud-aidist" class="hud-val">0 ft</span></div>
+    </div>
+
+    <div class="control-zone" id="left-controls">
+        <div class="btn" id="btn-gas">GAS</div>
+        <div class="btn" id="btn-clutch-l">CLUTCH</div>
+    </div>
+
+    <div class="control-zone" id="right-controls">
+        <div class="nos-row">
+            <div class="btn" id="btn-nos-arm">N2O ARM</div>
+            <div class="btn" id="btn-nos-launch">N2O ENGAGE</div>
+        </div>
+        
+        <div class="shifter-quadrant" id="quadrant-zone">
+            <div class="shift-gate" data-gear="1">1</div>
+            <div class="shift-gate" data-gear="3">3</div>
+            <div class="shift-gate" data-gear="5">5</div>
+            <div class="shift-gate blank"></div>
+            <div class="shift-gate active" data-gear="0">N</div>
+            <div class="shift-gate blank"></div>
+            <div class="shift-gate" data-gear="2">2</div>
+            <div class="shift-gate" data-gear="4">4</div>
+            <div class="shift-gate" data-gear="6">6</div>
+        </div>
+
+        <div class="btn" id="btn-clutch-r">CLUTCH</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+    const container = document.getElementById('game-container');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function scaleGameViewport() {
+        const baseWidth = 932;
+        const baseHeight = 430;
+        let scaleFactor = Math.min(window.innerWidth / baseWidth, window.innerHeight / baseHeight);
+        container.style.transform = `scale(${scaleFactor})`;
+        canvas.width = baseWidth;
+        canvas.height = baseHeight;
+    }
+    window.addEventListener('resize', scaleGameViewport);
+    scaleGameViewport();
+
+    // Simulation Game Loop State
+    let state = {
+        pov: 'outside', 
+        raceState: 'idle', 
+        time: 0,
+        distance: 0, 
+        speed: 0, 
+        gear: 0, 
+        rpm: 1000,
+        aiDistance: 0,
+        aiSpeed: 0,
+        aiFinished: false,
+        clutchLeft: false,
+        clutchRight: false,
+        gas: false,
+        nosArmed: false,
+        nosEngaged: false,
+        treeTimer: 0,
+        treeStep: 0,
+        startTime: 0,
+        logMsg: "",
+        shiftError: false
+    };
+
+    const MAX_RPM = 7500;
+    const REDLINE = 6800;
+    const IDLE_RPM = 1000;
+    const GEAR_RATIOS = [0, 3.25, 2.22, 1.55, 1.18, 0.92, 0.75]; 
+    const FINAL_DRIVE = 4.10;
+
+    const UI = {
+        gas: document.getElementById('btn-gas'),
+        clutchL: document.getElementById('btn-clutch-l'),
+        clutchR: document.getElementById('btn-clutch-r'),
+        nosArm: document.getElementById('btn-nos-arm'),
+        nosLaunch: document.getElementById('btn-nos-launch'),
+        pov: document.getElementById('pov-toggle'),
+        stage: document.getElementById('stage-btn'),
+        quadrant: document.getElementById('quadrant-zone'),
+        gates: document.querySelectorAll('.shift-gate[data-gear]'),
+        hudTime: document.getElementById('hud-time'),
+        hudDist: document.getElementById('hud-dist'),
+        hudGear: document.getElementById('hud-gear'),
+        hudRpm: document.getElementById('hud-rpm'),
+        hudMph: document.getElementById('hud-mph'),
+        hudAiDist: document.getElementById('hud-aidist')
+    };
+
+    function bindButton(element, onPress, onRelease) {
+        element.addEventListener('pointerdown', (e) => { e.preventDefault(); element.classList.add('active'); onPress(); });
+        element.addEventListener('pointerup', (e) => { e.preventDefault(); element.classList.remove('active'); onRelease(); });
+        element.addEventListener('pointerleave', (e) => { if(element.classList.contains('active')) { element.classList.remove('active'); onRelease(); } });
+    }
+
+    bindButton(UI.gas, () => { state.gas = true; }, () => { state.gas = false; });
+    bindButton(UI.clutchL, () => { state.clutchLeft = true; }, () => { state.clutchLeft = false; });
+    bindButton(UI.clutchR, () => { state.clutchRight = true; }, () => { state.clutchRight = false; });
+    bindButton(UI.nosLaunch, () => { if(state.nosArmed) state.nosEngaged = true; }, () => { state.nosEngaged = false; });
+    
+    UI.nosArm.addEventListener('click', () => { state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); });
+    UI.pov.addEventListener('click', () => { state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
+    UI.stage.addEventListener('click', () => { resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
+
+    function processShiftAtCoords(clientX, clientY) {
+        let targetElement = document.elementFromPoint(clientX, clientY);
+        if (targetElement && targetElement.classList.contains('shift-gate') && !targetElement.classList.contains('blank')) {
+            let targetGear = parseInt(targetElement.getAttribute('data-gear'));
+            if (state.gear !== targetGear) attemptShift(targetGear);
+        }
+    }
+
+    UI.quadrant.addEventListener('touchmove', (e) => { if (e.touches.length > 0) processShiftAtCoords(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+    UI.quadrant.addEventListener('touchstart', (e) => { if (e.touches.length > 0) processShiftAtCoords(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+
+    let isMouseShifting = false;
+    UI.quadrant.addEventListener('mousedown', (e) => { isMouseShifting = true; processShiftAtCoords(e.clientX, e.clientY); });
+    window.addEventListener('mousemove', (e) => { if (isMouseShifting) processShiftAtCoords(e.clientX, e.clientY); });
+    window.addEventListener('mouseup', () => { isMouseShifting = false; });
+
+    function attemptShift(targetGear) {
+        if (state.clutchLeft || state.clutchRight) {
+            state.gear = targetGear;
+            state.shiftError = false;
+        } else {
+            state.gear = 0;
+            if(targetGear !== 0) state.shiftError = true;
+        }
+        UI.gates.forEach(g => {
+            if(parseInt(g.getAttribute('data-gear')) === state.gear) g.classList.add('active');
+            else g.classList.remove('active');
+        });
+    }
+
+    function resetRace() {
+        state.time = 0; state.distance = 0; state.speed = 0; state.gear = 0; state.rpm = IDLE_RPM;
+        state.aiDistance = 0; state.aiSpeed = 0; state.aiFinished = false;
+        state.raceState = 'idle'; state.logMsg = ""; attemptShift(0);
+    }
+
+    // Advanced Matrix Perspective Projection Engine (Perfectly centers driver eye-line to their lane center)
+    function getProjection(objDistance, laneOffset = 0) {
+        // laneOffset mapping values: -1 = Player Lane, 0 = Center Safety Divider Wall, 1 = Enemy AI Lane
+        let diff = objDistance - state.distance;
+        let horizon = canvas.height * 0.45;
+        let playerY = canvas.height * 0.85;
+        
+        let horizonX = canvas.width * 0.5; // Tracking reference center point
+        let camOffsetLane = 0;             // Camera begins centered on divider track line
+        
+        // REORGANIZE ROAD TO CENTER DRIVER'S LANE DIRECTLY UP THE MIDDLE
+        if (state.pov === 'inside') {
+            camOffsetLane = -1; // Locks the player's track center (-1) to the screen center line (horizonX)
+        }
+        
+        let y = horizon + (playerY - horizon) / (1 + diff * 0.012);
+        let scale = (y - horizon) / (playerY - horizon);
+        
+        let laneSpacing = canvas.width * 0.24;
+        
+        // Matrix lane equation matches new parallel sight reference path tracking
+        let x = horizonX + (laneOffset - camOffsetLane) * laneSpacing * scale;
+        
+        return { x: x, y: y, scale: scale, visible: (diff > -55 && diff < 1200) };
+    }
+
+    // Engine Simulation Physics Core
+    let lastTime = performance.now();
+    function updatePhysics() {
+        let now = performance.now();
+        let dt = (now - lastTime) / 1000;
+        lastTime = now;
+        if (dt > 0.1) dt = 0.1;
+
+        if (state.raceState === 'staging' || state.raceState === 'countdown') {
+            state.treeTimer += dt;
+            if (state.treeStep === 1 && state.treeTimer > 0.6) { state.treeStep = 2; state.treeTimer = 0; state.raceState = 'countdown'; } 
+            if (state.treeStep === 2 && state.treeTimer > 0.5) { state.treeStep = 3; state.treeTimer = 0; } 
+            if (state.treeStep === 3 && state.treeTimer > 0.5) { state.treeStep = 4; state.treeTimer = 0; } 
+            if (state.treeStep === 4 && state.treeTimer > 0.5) { state.treeStep = 5; state.treeTimer = 0; } 
+            if (state.treeStep === 5 && state.treeTimer > 0.5) { 
+                state.treeStep = 6; state.treeTimer = 0; state.raceState = 'racing'; state.startTime = performance.now();
+            }
+        }
+
+        if ((state.raceState === 'countdown' || state.raceState === 'staging') && !state.clutchRight && state.gear === 1 && state.speed === 0) {
+            state.raceState = 'foul'; state.treeStep = 7; state.logMsg = "FOUL! JUMPED THE TREE!";
+        }
+
+        let clutchEngaged = !(state.clutchLeft || state.clutchRight);
+
+        if (state.gear === 0 || !clutchEngaged) {
+            if (state.gas) {
+                state.rpm += 12000 * dt;
+                if (state.rpm > MAX_RPM) state.rpm = MAX_RPM - (Math.random() * 200); 
+            } else {
+                state.rpm -= 4000 * dt;
+                if (state.rpm < IDLE_RPM) state.rpm = IDLE_RPM;
+            }
+            if (state.speed > 0) { state.speed -= 8 * dt; if (state.speed < 0) state.speed = 0; }
+        } else {
+            let targetSpeedRatio = GEAR_RATIOS[state.gear] * FINAL_DRIVE * 0.12; 
+            if (state.gas) {
+                let powerFactor = (state.rpm > REDLINE) ? 0.3 : 1.0; 
+                let nosBoost = state.nosEngaged ? 1.8 : 1.0;
+                let acc = (46 / GEAR_RATIOS[state.gear]) * powerFactor * nosBoost;
+                state.speed += acc * dt;
+                state.rpm = IDLE_RPM + (state.speed * targetSpeedRatio);
+                if (state.rpm > MAX_RPM) { state.rpm = MAX_RPM; state.speed = (state.rpm - IDLE_RPM) / targetSpeedRatio; }
+            } else {
+                state.speed -= 15 * dt;
+                state.rpm = IDLE_RPM + (state.speed * targetSpeedRatio);
+                if (state.rpm < IDLE_RPM) { state.rpm = IDLE_RPM; state.speed = 0; }
+            }
+        }
+
+        if (state.raceState === 'racing') {
+            state.time = (performance.now() - state.startTime) / 1000;
+            
+            let aiGear = 1;
+            if (state.time > 1.4) aiGear = 2;
+            if (state.time > 3.1) aiGear = 3;
+            if (state.time > 5.0) aiGear = 4;
+            if (state.time > 7.1) aiGear = 5;
+
+            let aiAcc = (49.5 / aiGear);
+            if ((state.time > 1.35 && state.time < 1.45) || (state.time > 3.05 && state.time < 3.15) || 
+                (state.time > 4.95 && state.time < 5.05) || (state.time > 7.05 && state.time < 7.15)) {
+                aiAcc = -12; 
+            }
+            state.aiSpeed += aiAcc * dt;
+            if (state.aiSpeed < 0) state.aiSpeed = 0;
+            state.aiDistance += state.aiSpeed * dt;
+            state.distance += state.speed * dt;
+
+            if (state.distance >= 1320 && !state.aiFinished) {
+                state.raceState = 'finished';
+                state.logMsg = `PLAYER WINS! ET: ${state.time.toFixed(3)}s @ ${(state.speed * 0.681818).toFixed(1)} MPH`;
+            } else if (state.aiDistance >= 1320 && state.distance < 1320) {
+                state.aiFinished = true;
+                state.raceState = 'finished';
+                state.logMsg = `AI WINS (84 FIREBIRD)! ET: ${state.time.toFixed(3)}s`;
+            }
+        } else if (state.raceState === 'finished' || state.raceState === 'foul') {
+            state.distance += state.speed * dt;
+            if (!state.aiFinished) state.aiDistance += state.aiSpeed * dt;
+        }
+
+        updateHUD();
+    }
+
+    function updateHUD() {
+        UI.hudTime.innerText = state.time.toFixed(2) + "s";
+        UI.hudDist.innerText = Math.floor(state.distance) + " ft";
+        UI.hudGear.innerText = state.shiftError ? "E" : (state.gear === 0 ? "N" : state.gear);
+        UI.hudRpm.innerText = Math.floor(state.rpm);
+        UI.hudMph.innerText = Math.floor(state.speed * 0.681818); 
+        UI.hudAiDist.innerText = Math.floor(state.aiDistance) + " ft";
+    }
+
+    // Graphics Engine Rendering Pipeline
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let horizon = canvas.height * 0.45;
+        
+        let skyGrad = ctx.createLinearGradient(0,0,0,horizon);
+        skyGrad.addColorStop(0, '#020208'); skyGrad.addColorStop(1, '#181326');
+        ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, canvas.width, horizon);
+
+        ctx.fillStyle = '#1b1b1b'; ctx.fillRect(0, horizon, canvas.width, canvas.height - horizon);
+
+        // Track footprint edge boundaries
+        let pFarLeft = getProjection(state.distance + 1000, -2.5);
+        let pCloseLeft = getProjection(state.distance, -2.5);
+        let pFarRight = getProjection(state.distance + 1000, 2.5);
+        let pCloseRight = getProjection(state.distance, 2.5);
+
+        ctx.fillStyle = '#0f0f14';
+        ctx.beginPath();
+        ctx.moveTo(pFarLeft.x, horizon); ctx.lineTo(pCloseLeft.x, canvas.height);
+        ctx.lineTo(pCloseRight.x, canvas.height); ctx.lineTo(pFarRight.x, horizon);
+        ctx.closePath(); ctx.fill();
+
+        // Project Lane Division Lines
+        ctx.strokeStyle = '#444'; ctx.lineWidth = 2; ctx.setLineDash([15, 20]);
+        let pTrackLeft = getProjection(state.distance, -1);
+        let pTrackRight = getProjection(state.distance, 1);
+        let pHorizonCenter = getProjection(state.distance + 1000, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(pHorizonCenter.x, horizon); ctx.lineTo(pTrackLeft.x, canvas.height);
+        ctx.moveTo(pHorizonCenter.x, horizon); ctx.lineTo(pTrackRight.x, canvas.height);
+        ctx.stroke(); ctx.setLineDash([]);
+
+        // Project Finish Line Strip Trap
+        let finishProj = getProjection(1320, 0);
+        if (finishProj.visible) {
+            let fL = getProjection(1320, -2.2);
+            let fR = getProjection(1320, 2.2);
+
+            ctx.fillStyle = '#e65c00'; 
+            ctx.fillRect(fL.x, finishProj.y, fR.x - fL.x, 6 * finishProj.scale);
+            
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3 * finishProj.scale; ctx.setLineDash([4 * finishProj.scale, 4 * finishProj.scale]);
+            ctx.beginPath(); ctx.moveTo(fL.x, finishProj.y + 2); ctx.lineTo(fR.x, finishProj.y + 2); ctx.stroke(); ctx.setLineDash([]);
+
+            ctx.strokeStyle = '#555'; ctx.lineWidth = 5 * finishProj.scale;
+            ctx.strokeRect(fL.x - 5, finishProj.y - 120 * finishProj.scale, (fR.x - fL.x) + 10, 120 * finishProj.scale);
+            ctx.fillStyle = '#ffcc00'; ctx.font = `bold ${Math.floor(13 * finishProj.scale)}px sans-serif`; ctx.textAlign = 'center';
+            ctx.fillText("1/4 MILE TRAP", finishProj.x, finishProj.y - 100 * finishProj.scale);
+        }
+
+        // Project Center Wall Divider
+        let wallStart = Math.floor(state.distance / 30) * 30 - 30;
+        for (let d = wallStart; d < state.distance + 700; d += 30) {
+            let p1 = getProjection(d, 0);
+            let p2 = getProjection(d + 15, 0);
+            if (p1.visible && p2.visible) {
+                ctx.fillStyle = (Math.floor(d / 30) % 2 === 0) ? '#5c5c64' : '#4c4c52';
+                ctx.beginPath();
+                ctx.moveTo(p1.x - 3 * p1.scale, p1.y);
+                ctx.lineTo(p1.x - 1 * p1.scale, p1.y - 12 * p1.scale);
+                ctx.lineTo(p2.x - 1 * p2.scale, p2.y - 12 * p2.scale);
+                ctx.lineTo(p2.x - 3 * p2.scale, p2.y);
+                ctx.closePath(); ctx.fill();
+
+                ctx.fillStyle = '#7c7c84';
+                ctx.beginPath();
+                ctx.moveTo(p1.x - 1 * p1.scale, p1.y - 12 * p1.scale);
+                ctx.lineTo(p1.x + 1 * p1.scale, p1.y - 12 * p1.scale);
+                ctx.lineTo(p2.x + 1 * p2.scale, p2.y - 12 * p2.scale);
+                ctx.lineTo(p2.x - 1 * p2.scale, p2.y - 12 * p2.scale);
+                ctx.closePath(); ctx.fill();
+            }
+        }
+
+        // Project AI 1984 Pontiac Firebird (Lane Center Offset = 1)
+        let aiProj = getProjection(state.aiDistance, 1);
+        if (aiProj.visible) {
+            drawOutsideFirebird(aiProj.x, aiProj.y, aiProj.scale);
+        }
+
+        // Project NHRA Christmas Tree (Distance = 0, Center Wall Offset = 0)
+        let treeProj = getProjection(0, 0);
+        if (treeProj.visible) {
+            drawTree(treeProj.x, treeProj.y - 50 * treeProj.scale, treeProj.scale);
+        }
+
+        // Viewport Layering Routing Execution
+        if (state.pov === 'outside') {
+            let playerProj = getProjection(state.distance, -1);
+            drawOutsideMustang(playerProj.x, playerProj.y, 1);
+        } else {
+            drawInsideCockpit();
+        }
+
+        // Snug Dynamic Result Box Overlay
+        if (state.logMsg !== "") {
+            ctx.font = 'bold 14px Courier New'; 
+            let textMetrics = ctx.measureText(state.logMsg);
+            let boxWidth = textMetrics.width + 30; 
+            let boxHeight = 40;
+            let boxX = (canvas.width - boxWidth) / 2;
+            let boxY = (canvas.height - boxHeight) / 2 - 15;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.92)'; ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+            ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = 2; ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+            ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(state.logMsg, canvas.width * 0.5, boxY + boxHeight / 2);
+            ctx.textBaseline = 'alphabetic'; 
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    function drawTree(x, y, scale) {
+        ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+        ctx.fillStyle = '#222'; ctx.fillRect(-12, -80, 24, 100);
+        ctx.strokeStyle = '#444'; ctx.strokeRect(-12, -80, 24, 100);
+
+        function drawLight(row, offset, color, lit) {
+            ctx.fillStyle = lit ? color : '#332200'; ctx.beginPath();
+            ctx.arc(offset, -70 + (row * 14), 5, 0, Math.PI * 2); ctx.fill();
+            if(lit) {
+                ctx.shadowBlur = 15; ctx.shadowColor = color; ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(offset, -70 + (row * 14), 2, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 0; 
+            }
+        }
+        drawLight(0, -6, '#fff', state.treeStep >= 1); drawLight(0, 6, '#fff', state.treeStep >= 1);  
+        drawLight(1, -6, '#fff', state.treeStep >= 2); drawLight(1, 6, '#fff', state.treeStep >= 2);  
+        drawLight(2, -6, '#ffaa00', state.treeStep >= 3); drawLight(2, 6, '#ffaa00', state.treeStep >= 3);
+        drawLight(3, -6, '#ffaa00', state.treeStep >= 4); drawLight(3, 6, '#ffaa00', state.treeStep >= 4);
+        drawLight(4, -6, '#ffaa00', state.treeStep >= 5); drawLight(4, 6, '#ffaa00', state.treeStep >= 5);
+        drawLight(5, -6, '#00ff00', state.treeStep === 6); drawLight(5, 6, '#00ff00', state.treeStep === 6);
+        drawLight(6, 0, '#ff0000', state.treeStep === 7); 
+        ctx.restore();
+    }
+
+    function drawOutsideMustang(x, y, scale) {
+        ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+        let w = 110;
+        ctx.fillStyle = '#050505'; ctx.fillRect(-12, -22, 24, 16);
+        ctx.strokeStyle = '#cc0000'; ctx.strokeRect(-12, -22, 24, 16);
+
+        ctx.fillStyle = '#b30000'; ctx.beginPath();
+        ctx.moveTo(-w/2, 0); ctx.lineTo(-w/2 + 4, -25); ctx.lineTo(-w/3, -32);
+        ctx.lineTo(w/3, -32); ctx.lineTo(w/2 - 4, -25); ctx.lineTo(w/2, 0);
+        ctx.closePath(); ctx.fill();
+
+        ctx.fillStyle = '#111'; ctx.beginPath();
+        ctx.moveTo(-w/3 + 4, -32); ctx.lineTo(-w/4, -55); ctx.lineTo(w/4, -55); ctx.lineTo(w/3 - 4, -32);
+        ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#b30000'; ctx.lineWidth = 2; ctx.stroke();
+
+        ctx.fillStyle = '#1c252e'; ctx.beginPath();
+        ctx.moveTo(-w/3 + 8, -34); ctx.lineTo(-w/4 + 3, -52); ctx.lineTo(w/4 - 3, -52); ctx.lineTo(w/3 - 8, -34);
+        ctx.closePath(); ctx.fill();
+
+        ctx.fillStyle = '#200'; ctx.fillRect(-w/2 + 8, -20, 26, 12); ctx.fillRect(w/2 - 34, -20, 26, 12);
+        ctx.fillStyle = '#ff0000'; ctx.fillRect(-w/2 + 10, -18, 22, 3); ctx.fillRect(-w/2 + 10, -11, 22, 3);
+        ctx.fillRect(w/2 - 32, -18, 22, 3); ctx.fillRect(w/2 - 32, -11, 22, 3);
+
+        ctx.fillStyle = '#0a0a0a'; ctx.fillRect(-w/2 + 2, 0, 22, 18); ctx.fillRect(w/2 - 24, 0, 22, 18);
+        if (state.nosEngaged && state.gas) {
+            ctx.fillStyle = 'rgba(160, 200, 255, 0.7)';
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath(); ctx.arc(-w/3 - (Math.random()*12), -38 - (Math.random()*8), 3 + Math.random()*5, 0, Math.PI*2);
+                ctx.arc(w/3 + (Math.random()*12), -38 - (Math.random()*8), 3 + Math.random()*5, 0, Math.PI*2); ctx.fill();
+            }
+        }
+        ctx.restore();
+    }
+
+    function drawOutsideFirebird(x, y, scale) {
+        ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+        let w = 114; 
+        ctx.fillStyle = '#2b2e33'; ctx.beginPath();
+        ctx.moveTo(-w/2, 0); ctx.lineTo(-w/2 + 2, -20); ctx.lineTo(-w/2 + 12, -26);
+        ctx.lineTo(w/2 - 12, -26); ctx.lineTo(w/2 - 2, -20); ctx.lineTo(w/2, 0);
+        ctx.closePath(); ctx.fill();
+
+        ctx.fillStyle = '#181a1c'; ctx.fillRect(-w/2 + 10, -30, w - 20, 5);
+
+        ctx.fillStyle = '#0f1115'; ctx.beginPath();
+        ctx.moveTo(-w/2 + 14, -26); ctx.lineTo(-w/4 + 2, -50);
+        ctx.lineTo(w/4 - 2, -50); ctx.lineTo(w/2 - 14, -26);
+        ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#2b2e33'; ctx.lineWidth = 2; ctx.stroke();
+
+        ctx.fillStyle = '#111'; ctx.fillRect(-w/2 + 8, -19, w - 16, 11);
+        ctx.fillStyle = '#990000'; ctx.fillRect(-w/2 + 14, -16, 34, 5); ctx.fillRect(w/2 - 48, -16, 34, 5);
+        ctx.fillStyle = '#080808'; ctx.fillRect(-w/2 + 4, 0, 24, 16); ctx.fillRect(w/2 - 28, 0, 24, 16);
+        ctx.restore();
+    }
+
+    // Inside Cockpit Rendering (MAX FIELD OF VIEW LOWERED DASHBOARD OPTIMIZATION)
+    function drawInsideCockpit() {
+        // DASHBOARD DROPPED FROM 64% TO 72% FOR MAXIMUM SIGHTLINE AREA OVER THE COCKPIT COWL
+        let dashY = canvas.height * 0.72; 
+        
+        // --- 1. WINDSHIELD FRAME AND CABIN LAYER MASKS ---
+        ctx.fillStyle = '#141619'; // Main dark plastic interior trim base
+        ctx.fillRect(0, dashY, canvas.width, canvas.height - dashY); // Solid dash ledge
+        ctx.fillRect(0, 0, canvas.width, 30); // Top cabin roof line
+        
+        // Left Structural A-Pillar (Driver Side Edge)
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(canvas.width * 0.08, 30);
+        ctx.lineTo(canvas.width * 0.03, dashY); ctx.lineTo(0, dashY);
+        ctx.closePath(); ctx.fill();
+
+        // Right Structural A-Pillar (Far Passenger Side Edge)
+        ctx.beginPath();
+        ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width * 0.92, 30);
+        ctx.lineTo(canvas.width * 0.97, dashY); ctx.lineTo(canvas.width, dashY);
+        ctx.closePath(); ctx.fill();
+
+        // Rear View Mirror Setup
+        ctx.fillStyle = '#08090a'; ctx.fillRect(canvas.width * 0.56, 30, 110, 26);
+        ctx.strokeStyle = '#333'; ctx.strokeRect(canvas.width * 0.56, 30, 110, 26);
+        ctx.fillStyle = '#223'; ctx.fillRect(canvas.width * 0.58, 33, 102, 20);
+
+        // --- 2. RETRO 1992 RECTANGULAR MUSTANG BINNACLE COWL ---
+        // PERFECTLY RE-CENTERED TO SIGHTLINE SEAT CORNER ON AXIS (canvas.width * 0.5)
+        let clusterLeft = canvas.width * 0.5 - 130; // Centered 260px wide assembly box
+        let clusterWidth = 260;
+        
+        ctx.fillStyle = '#1c1e22'; 
+        ctx.beginPath();
+        ctx.moveTo(clusterLeft, dashY);
+        ctx.lineTo(clusterLeft + 15, dashY - 45); 
+        ctx.lineTo(clusterLeft + clusterWidth - 15, dashY - 45);
+        ctx.lineTo(clusterLeft + clusterWidth, dashY);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5; ctx.stroke();
+
+        ctx.fillStyle = '#0a0b0d';
+        ctx.fillRect(clusterLeft + 18, dashY - 39, clusterWidth - 36, 39);
+
+        // Cluster Dial Telemetry Nodes
+        function drawCockpitGauge(cx, cy, radius, value, maxVal, label, color) {
+            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#2d3035'; ctx.lineWidth = 1.5; ctx.stroke();
+
+            ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath();
+            let startAng = Math.PI * 0.8; let endAng = Math.PI * 2.2;
+            let currentAng = startAng + ((value / maxVal) * (endAng - startAng));
+            ctx.arc(cx, cy, radius - 3, startAng, currentAng); ctx.stroke();
+
+            ctx.strokeStyle = '#ff3300'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(currentAng) * (radius - 5), cy + Math.sin(currentAng) * (radius - 5)); ctx.stroke();
+
+            ctx.fillStyle = '#aaa'; ctx.font = 'bold 8px Helvetica'; ctx.textAlign = 'center';
+            ctx.fillText(label, cx, cy + radius - 9);
+        }
+
+        let gaugeY = dashY - 18;
+        drawCockpitGauge(clusterLeft + 60, gaugeY, 19, state.rpm, MAX_RPM, "RPM", '#ffcc00');
+        drawCockpitGauge(clusterLeft + 125, gaugeY, 19, state.speed * 0.681818, 160, "MPH", '#00ffcc');
+        
+        // Digital gear layout container box
+        ctx.fillStyle = '#151515'; ctx.fillRect(clusterLeft + 172, dashY - 28, 22, 18);
+        ctx.fillStyle = state.shiftError ? '#ff0000' : '#00ff00'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
+        ctx.fillText(state.shiftError ? "E" : (state.gear === 0 ? "N" : state.gear), clusterLeft + 183, dashY - 15);
+
+        // 5-Inch Mechanical Dashboard Shift Light Pod
+        let lightColor = (state.rpm >= REDLINE) ? '#ff0000' : '#220000';
+        ctx.fillStyle = '#08080a'; ctx.fillRect(clusterLeft + clusterWidth - 8, dashY - 52, 22, 22); 
+        ctx.fillStyle = lightColor; ctx.beginPath(); ctx.arc(clusterLeft + clusterWidth + 3, dashY - 41, 8, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#444'; ctx.stroke();
+
+        // --- 3. CENTERED 3-SPOKE PERFORMANCE DRAG WHEEL ---
+        // Pushed straight to absolute screen horizontal center mapping reference
+        let wheelX = canvas.width * 0.5 - 10;
+        let wheelY = dashY + 32;
+
+        ctx.save();
+        ctx.strokeStyle = '#0d0d0f'; ctx.lineWidth = 11;
+        ctx.shadowColor = '#000'; ctx.shadowBlur = 8; 
+        ctx.beginPath();
+        ctx.arc(wheelX, wheelY, 65, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle = '#1c1e22'; ctx.beginPath(); ctx.arc(wheelX, wheelY, 15, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#111'; ctx.stroke();
+    }
+
+    function runLoop() { updatePhysics(); draw(); }
+    setInterval(runLoop, 1000 / 60);
+</script>
+
+</body>
+</html>
