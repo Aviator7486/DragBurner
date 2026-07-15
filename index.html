@@ -43,7 +43,7 @@
             z-index: 1;
         }
 
-        /* Remote Version Tracker Label (v1.4) - Safe area between controls */
+        /* Remote Version Tracker Label (v1.5) - Safe area between controls */
         #version-tag {
             position: absolute;
             bottom: 10px;
@@ -206,7 +206,7 @@
 <body>
 
 <div id="game-container">
-    <div id="version-tag">v1.4</div>
+    <div id="version-tag">v1.5</div>
     <button id="pov-toggle" class="top-btn">POV: OUTSIDE</button>
     <button id="sound-toggle" class="top-btn">🔇 SOUND: OFF</button>
     <button id="stage-btn" class="top-btn">STAGE CAR</button>
@@ -288,7 +288,7 @@
         logMsg: "",
         shiftError: false,
         screechPlayed: false,
-        muted: true // Sound starts OFF to cleanly align with the physical toggle bypass
+        muted: true // Explicitly starts muted so sound button acts as bypass catalyst
     };
 
     let shifterX = 1; 
@@ -303,8 +303,8 @@
     const FINAL_DRIVE = 4.10;
     const VELOCITY_CONSTANT = 6.989; 
 
-    // --- PROVEN iOS SILENT SWITCH BYPASS RESOURCE ---
-    const SILENT_WAV_B64 = "UklGRjUrAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YRErAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDIA=";
+    // --- iOS HARWARE SILENT SWITCH BYPASS CONFIG ---
+    const SILENT_WAV_B64 = "UklGRjUrAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YRErAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC2IA=";
     let silentAudio = null;
 
     // --- SYNTHESIZED WEB AUDIO API AUDIO ENGINE ---
@@ -330,14 +330,13 @@
                 this.masterGain.connect(this.ctx.destination);
                 this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
 
-                // Engine Synthesizer Nodes
+                // Engine Nodes
                 this.engineOsc1 = this.ctx.createOscillator();
                 this.engineOsc2 = this.ctx.createOscillator();
                 this.engineGain = this.ctx.createGain();
-                
                 this.engineOsc1.type = 'sawtooth';
                 this.engineOsc2.type = 'triangle';
-                
+
                 let lowpass = this.ctx.createBiquadFilter();
                 lowpass.type = 'lowpass';
                 lowpass.frequency.setValueAtTime(280, this.ctx.currentTime);
@@ -346,27 +345,25 @@
                 this.engineOsc2.connect(lowpass);
                 lowpass.connect(this.engineGain);
                 this.engineGain.connect(this.masterGain);
-                
                 this.engineGain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+
                 this.engineOsc1.start(0);
                 this.engineOsc2.start(0);
 
-                // Procedural Wind Generator Nodes
+                // Wind Noise Nodes
                 let bufferSize = 2 * this.ctx.sampleRate;
                 let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 let output = noiseBuffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    output[i] = Math.random() * 2 - 1;
-                }
-                
+                for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+
                 this.windNoiseNode = this.ctx.createBufferSource();
                 this.windNoiseNode.buffer = noiseBuffer;
                 this.windNoiseNode.loop = true;
-
+                
                 let windFilter = this.ctx.createBiquadFilter();
                 windFilter.type = 'lowpass';
                 windFilter.frequency.setValueAtTime(180, this.ctx.currentTime);
-
+                
                 this.windGainNode = this.ctx.createGain();
                 this.windGainNode.gain.setValueAtTime(0.0, this.ctx.currentTime);
 
@@ -377,7 +374,7 @@
 
                 this.initialized = true;
             } catch (e) {
-                console.error("Audio Engine setup failed:", e);
+                console.error("Audio init failed", e);
             }
         },
 
@@ -394,12 +391,11 @@
             this.engineOsc2.frequency.setValueAtTime(baseFreq * 0.5, this.ctx.currentTime);
 
             let loadGain = gas ? 0.22 : 0.08;
-            if (state.gear === 0) loadGain *= 0.7; 
+            if (state.gear === 0) loadGain *= 0.7;
             this.engineGain.gain.setValueAtTime(loadGain, this.ctx.currentTime);
 
             let mph = speed * 0.681818;
-            let targetWindVolume = Math.min(mph / 320, 0.25);
-            this.windGainNode.gain.setValueAtTime(targetWindVolume, this.ctx.currentTime);
+            this.windGainNode.gain.setValueAtTime(Math.min(mph / 320, 0.25), this.ctx.currentTime);
         },
 
         playTone(freq, type, duration, volume) {
@@ -445,6 +441,12 @@
         }
     };
 
+    function createSilentAudio() {
+        if (silentAudio) return;
+        silentAudio = new Audio("data:audio/wav;base64," + SILENT_WAV_B64);
+        silentAudio.loop = true;
+    }
+
     const UI = {
         gas: document.getElementById('btn-gas'),
         clutchL: document.getElementById('btn-clutch-l'),
@@ -463,6 +465,27 @@
         hudMph: document.getElementById('hud-mph'),
         hudAiDist: document.getElementById('hud-aidist')
     };
+
+    // --- GLOBAL FIRST-TOUCH UNLOCK INTERCEPTOR ---
+    let audioUnlocked = false;
+    document.addEventListener('touchstart', async function unlockAudio(e) {
+        if (audioUnlocked) return;
+        audioUnlocked = true;
+
+        createSilentAudio();
+        try {
+            await silentAudio.play();
+            console.log("iOS silent-switch bypass activated via primary viewport touch");
+        } catch (err) {
+            console.log("Bypass play track skipped", err);
+        }
+
+        await AudioEngine.init();
+        AudioEngine.setMute(state.muted);
+
+        console.log("AudioContext state:", AudioEngine.ctx ? AudioEngine.ctx.state : "not created");
+        document.removeEventListener('touchstart', unlockAudio);
+    }, { once: true });
 
     function bindButton(element, onPress, onRelease) {
         element.addEventListener('pointerdown', () => { 
@@ -492,40 +515,26 @@
     UI.pov.addEventListener('click', () => { AudioEngine.init(); state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
     UI.stage.addEventListener('click', () => { AudioEngine.init(); resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
 
-    // Initialize silent bypass track once
-    function createSilentAudio() {
-        if (silentAudio) return;
-        silentAudio = new Audio("data:audio/wav;base64," + SILENT_WAV_B64);
-        silentAudio.loop = true;
-    }
-
-    // Sound Button Logic with instant-play gesture bypass sequence
+    // Streamlined Clean Sound Toggle Button Click Hook
     UI.sound.addEventListener('click', async () => {
         state.muted = !state.muted;
         createSilentAudio();
-        
-        if (!state.muted) {
-            // CRITICAL: Play the silent HTML5 bypass track FIRST on click
-            try {
-                await silentAudio.play();
-            } catch (e) {
-                console.log("iOS silent play bypass caught", e);
-            }
-        } else {
+
+        if (!state.muted && silentAudio) {
+            try { await silentAudio.play(); } catch (e) {}
+        } else if (silentAudio) {
             silentAudio.pause();
         }
 
-        // Initialize and resume Web Audio Engine context afterward
         await AudioEngine.init();
         AudioEngine.setMute(state.muted);
 
-        // Update button colors and states
         UI.sound.innerText = state.muted ? "🔇 SOUND: OFF" : "🔊 SOUND: ON";
         UI.sound.style.borderColor = state.muted ? "#ff3333" : "#00ffcc";
         UI.sound.style.color = state.muted ? "#ff3333" : "#00ffcc";
     });
 
-    // --- ADVANCED COGNIZANT MULTI-TOUCH COORD SCANNER ---
+    // --- SHIFTER MULTI-TOUCH COORD SCANNER ---
     function processShiftAtCoords(clientX, clientY) {
         let targetElement = document.elementFromPoint(clientX, clientY);
         if (targetElement && targetElement.classList.contains('shift-gate')) {
@@ -536,7 +545,6 @@
                 let dx = Math.abs(tx - shifterX);
                 let dy = Math.abs(ty - shifterY);
                 
-                // Orthogonal path check to prevent diagonal skips
                 if ((dx + dy === 1) && (dy === 0 ? shifterY === 1 : true)) {
                     shifterX = tx;
                     shifterY = ty;
@@ -546,7 +554,6 @@
         }
     }
 
-    // Scan all active touch tracks to isolate the sliding finger from static clutch controls
     UI.quadrant.addEventListener('touchmove', (e) => { 
         let rect = UI.quadrant.getBoundingClientRect();
         for (let i = 0; i < e.touches.length; i++) {
@@ -618,7 +625,6 @@
             if (shifterX === 2) targetGear = 6;
         }
 
-        // Shift Gate Execution
         if (state.clutchLeft || state.clutchRight) {
             if (state.gear !== targetGear) {
                 state.gear = targetGear;
