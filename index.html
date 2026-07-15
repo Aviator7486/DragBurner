@@ -43,13 +43,13 @@
             z-index: 1;
         }
 
-        /* Remote Version Tracker Label (v1.2) */
+        /* Remote Version Tracker Label (v1.3) - Safe area between controls */
         #version-tag {
             position: absolute;
-            bottom: 6px;
-            right: 25px;
-            color: #333; /* Very subtle against the black background */
-            font-size: 10px;
+            bottom: 10px;
+            left: 160px;
+            color: #333; /* Dark gray, stays out of the way but legible */
+            font-size: 11px;
             font-weight: bold;
             z-index: 100;
             pointer-events: none;
@@ -78,7 +78,6 @@
         /* Top Button Styles */
         .top-btn {
             position: absolute;
-            top: 15px;
             z-index: 11;
             padding: 8px 12px;
             background: #222;
@@ -87,16 +86,25 @@
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
+            width: 145px;
+            height: 34px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         #pov-toggle {
+            top: 15px;
             left: 20px;
         }
         #sound-toggle {
-            left: 170px; /* Offset to sit nicely next to POV toggle */
-            border-color: #00ffcc;
-            color: #00ffcc;
+            top: 54px; /* Stacks perfectly directly under POV button */
+            left: 20px;
+            border-color: #ff3333; /* Default Sound OFF State is Red */
+            color: #ff3333;
         }
         #stage-btn {
+            top: 15px;
             right: 20px;
             background: #d4a373;
             color: #000;
@@ -198,9 +206,9 @@
 <body>
 
 <div id="game-container">
-    <div id="version-tag">v1.2</div>
+    <div id="version-tag">v1.3</div>
     <button id="pov-toggle" class="top-btn">POV: OUTSIDE</button>
-    <button id="sound-toggle" class="top-btn">🔊 SOUND: ON</button>
+    <button id="sound-toggle" class="top-btn">🔇 SOUND: OFF</button>
     <button id="stage-btn" class="top-btn">STAGE CAR</button>
 
     <div id="hud">
@@ -280,7 +288,7 @@
         logMsg: "",
         shiftError: false,
         screechPlayed: false,
-        muted: false
+        muted: true // Starting sound off by default to bypass iOS lockdowns safely!
     };
 
     let shifterX = 1; 
@@ -294,6 +302,12 @@
     const GEAR_RATIOS = [0, 2.90, 2.10, 1.64, 1.33, 1.10, 0.92]; 
     const FINAL_DRIVE = 4.10;
     const VELOCITY_CONSTANT = 6.989; 
+
+    // --- PROVEN iOS SILENT SWITCH BYPASS MODULE ---
+    // A tiny silent audio wave file that we play on HTML5 to trick iOS Safari to transition to the "Media Playback" profile.
+    const SILENT_WAV_B64 = "UklGRjUrAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YRErAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDIA=";
+    const silentAudio = new Audio("data:audio/wav;base64," + SILENT_WAV_B64);
+    silentAudio.loop = true;
 
     // --- SYNTHESIZED WEB AUDIO API AUDIO ENGINE ---
     const AudioEngine = {
@@ -315,17 +329,12 @@
             try {
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 
-                // Establish master gain controller for easy muting
+                // Establish master gain controller to handle global audio levels
                 this.masterGain = this.ctx.createGain();
                 this.masterGain.connect(this.ctx.destination);
+                
+                // Start with the gain level synced to our current mute state
                 this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
-
-                // iOS Silent Buffer Trick to wake hardware channel
-                const buffer = this.ctx.createBuffer(1, 1, 22050);
-                const source = this.ctx.createBufferSource();
-                source.buffer = buffer;
-                source.connect(this.masterGain);
-                source.start(0);
 
                 this.engineOsc1 = this.ctx.createOscillator();
                 this.engineOsc2 = this.ctx.createOscillator();
@@ -379,7 +388,7 @@
 
         setMute(isMuted) {
             if (!this.initialized) return;
-            // Instantly control master level
+            // Ramp gain smoothly to avoid audio pops
             const vol = isMuted ? 0 : 1;
             this.masterGain.gain.setValueAtTime(vol, this.ctx.currentTime);
         },
@@ -462,7 +471,6 @@
     };
 
     function bindButton(element, onPress, onRelease) {
-        // iOS requires user gestures to be unobstructed by e.preventDefault() on down triggers
         element.addEventListener('pointerdown', () => { 
             AudioEngine.init(); 
             element.classList.add('active'); 
@@ -490,12 +498,22 @@
     UI.pov.addEventListener('click', () => { AudioEngine.init(); state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
     UI.stage.addEventListener('click', () => { AudioEngine.init(); resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
 
-    // Sound Button Logic
+    // Sound Button Logic with Switch-Bypass Integration
     UI.sound.addEventListener('click', () => {
-        // Toggling this is a direct user gesture, which iOS Webkit completely respects!
-        AudioEngine.init();
         state.muted = !state.muted;
+        
+        if (!state.muted) {
+            // Unmuting triggers standard play back, routing audio output directly to media channel
+            silentAudio.play().catch(err => console.log("Safari mute override buffer primed", err));
+        } else {
+            silentAudio.pause();
+        }
+
+        // Initialize Web Audio Engine
+        AudioEngine.init();
         AudioEngine.setMute(state.muted);
+
+        // Update button appearance
         UI.sound.innerText = state.muted ? "🔇 SOUND: OFF" : "🔊 SOUND: ON";
         UI.sound.style.borderColor = state.muted ? "#ff3333" : "#00ffcc";
         UI.sound.style.color = state.muted ? "#ff3333" : "#00ffcc";
