@@ -43,16 +43,15 @@
             z-index: 1;
         }
 
-        /* Highly Visible, Remote Version Tracker Label (v1.7) */
+        /* Remote Version Tracker Label (v1.5) - Safe area between controls */
         #version-tag {
             position: absolute;
-            bottom: 12px;
-            left: 170px;
-            color: #888; /* Clearly readable medium-gray */
-            text-shadow: 1px 1px 2px #000; /* Protects legibility over canvas graphics */
+            bottom: 10px;
+            left: 160px;
+            color: #333; /* Dark gray, stays out of the way but legible */
             font-size: 11px;
             font-weight: bold;
-            z-index: 9999; /* Forces layer stacking above everything */
+            z-index: 100;
             pointer-events: none;
         }
 
@@ -207,7 +206,7 @@
 <body>
 
 <div id="game-container">
-    <div id="version-tag">v1.7</div>
+    <div id="version-tag">v1.5</div>
     <button id="pov-toggle" class="top-btn">POV: OUTSIDE</button>
     <button id="sound-toggle" class="top-btn">🔇 SOUND: OFF</button>
     <button id="stage-btn" class="top-btn">STAGE CAR</button>
@@ -289,7 +288,7 @@
         logMsg: "",
         shiftError: false,
         screechPlayed: false,
-        muted: true // Muted initially to allow sound button to act as bypass trigger
+        muted: true // Explicitly starts muted so sound button acts as bypass catalyst
     };
 
     let shifterX = 1; 
@@ -304,8 +303,8 @@
     const FINAL_DRIVE = 4.10;
     const VELOCITY_CONSTANT = 6.989; 
 
-    // === STRONGER iOS SILENT BYPASS ===
-    const SILENT_WAV_B64 = "UklGRiQAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="; // Short reliable silent clip
+    // --- iOS HARWARE SILENT SWITCH BYPASS CONFIG ---
+    const SILENT_WAV_B64 = "UklGRjUrAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YRErAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC2IA=";
     let silentAudio = null;
 
     // --- SYNTHESIZED WEB AUDIO API AUDIO ENGINE ---
@@ -331,11 +330,10 @@
                 this.masterGain.connect(this.ctx.destination);
                 this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
 
-                // Engine Synthesizer Nodes
+                // Engine Nodes
                 this.engineOsc1 = this.ctx.createOscillator();
                 this.engineOsc2 = this.ctx.createOscillator();
                 this.engineGain = this.ctx.createGain();
-                
                 this.engineOsc1.type = 'sawtooth';
                 this.engineOsc2.type = 'triangle';
 
@@ -352,7 +350,7 @@
                 this.engineOsc1.start(0);
                 this.engineOsc2.start(0);
 
-                // Procedural Wind Generator Nodes
+                // Wind Noise Nodes
                 let bufferSize = 2 * this.ctx.sampleRate;
                 let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 let output = noiseBuffer.getChannelData(0);
@@ -376,14 +374,14 @@
 
                 this.initialized = true;
             } catch (e) {
-                console.error("Audio engine context creation failed:", e);
+                console.error("Audio init failed", e);
             }
         },
 
         setMute(isMuted) {
-            if (this.masterGain) {
-                this.masterGain.gain.setValueAtTime(isMuted ? 0 : 1, this.ctx.currentTime);
-            }
+            if (!this.ctx) return;
+            const vol = isMuted ? 0 : 1;
+            this.masterGain.gain.setValueAtTime(vol, this.ctx.currentTime);
         },
 
         update(rpm, speed, gas) {
@@ -468,23 +466,26 @@
         hudAiDist: document.getElementById('hud-aidist')
     };
 
-    // GLOBAL UNLOCK ON ANY FIRST TOUCH (STRICT VIEWPORT INTERCEPT)
+    // --- GLOBAL FIRST-TOUCH UNLOCK INTERCEPTOR ---
     let audioUnlocked = false;
-    function unlockAudio() {
+    document.addEventListener('touchstart', async function unlockAudio(e) {
         if (audioUnlocked) return;
         audioUnlocked = true;
-        createSilentAudio();
-        if (silentAudio) {
-            silentAudio.play().catch(() => {});   // Critical early iOS bypass call
-        }
-        AudioEngine.init().then(() => {
-            AudioEngine.setMute(state.muted);
-            console.log("AudioContext state verified:", AudioEngine.ctx ? AudioEngine.ctx.state : "not created");
-        });
-    }
 
-    document.addEventListener('touchstart', unlockAudio, { once: true });
-    document.addEventListener('click', unlockAudio, { once: true });
+        createSilentAudio();
+        try {
+            await silentAudio.play();
+            console.log("iOS silent-switch bypass activated via primary viewport touch");
+        } catch (err) {
+            console.log("Bypass play track skipped", err);
+        }
+
+        await AudioEngine.init();
+        AudioEngine.setMute(state.muted);
+
+        console.log("AudioContext state:", AudioEngine.ctx ? AudioEngine.ctx.state : "not created");
+        document.removeEventListener('touchstart', unlockAudio);
+    }, { once: true });
 
     function bindButton(element, onPress, onRelease) {
         element.addEventListener('pointerdown', () => { 
@@ -514,7 +515,7 @@
     UI.pov.addEventListener('click', () => { AudioEngine.init(); state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
     UI.stage.addEventListener('click', () => { AudioEngine.init(); resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
 
-    // Streamlined Sound Toggle
+    // Streamlined Clean Sound Toggle Button Click Hook
     UI.sound.addEventListener('click', async () => {
         state.muted = !state.muted;
         createSilentAudio();
