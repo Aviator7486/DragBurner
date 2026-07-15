@@ -43,13 +43,13 @@
             z-index: 1;
         }
 
-        /* Subtle Version Tracker Label */
+        /* Remote Version Tracker Label (v1.2) */
         #version-tag {
             position: absolute;
-            bottom: 8px;
-            left: 15px;
-            color: #444;
-            font-size: 11px;
+            bottom: 6px;
+            right: 25px;
+            color: #333; /* Very subtle against the black background */
+            font-size: 10px;
             font-weight: bold;
             z-index: 100;
             pointer-events: none;
@@ -75,11 +75,10 @@
         }
         .hud-val { color: #0f0; }
 
-        /* POV & Stage Buttons */
-        #pov-toggle {
+        /* Top Button Styles */
+        .top-btn {
             position: absolute;
             top: 15px;
-            left: 20px;
             z-index: 11;
             padding: 8px 12px;
             background: #222;
@@ -89,18 +88,19 @@
             font-weight: bold;
             cursor: pointer;
         }
+        #pov-toggle {
+            left: 20px;
+        }
+        #sound-toggle {
+            left: 170px; /* Offset to sit nicely next to POV toggle */
+            border-color: #00ffcc;
+            color: #00ffcc;
+        }
         #stage-btn {
-            position: absolute;
-            top: 15px;
             right: 20px;
-            z-index: 11;
-            padding: 8px 12px;
             background: #d4a373;
             color: #000;
             border: 2px solid #fff;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
         }
 
         /* Control Zones */
@@ -198,9 +198,10 @@
 <body>
 
 <div id="game-container">
-    <div id="version-tag">v1</div>
-    <button id="pov-toggle">POV: OUTSIDE</button>
-    <button id="stage-btn">STAGE CAR</button>
+    <div id="version-tag">v1.2</div>
+    <button id="pov-toggle" class="top-btn">POV: OUTSIDE</button>
+    <button id="sound-toggle" class="top-btn">🔊 SOUND: ON</button>
+    <button id="stage-btn" class="top-btn">STAGE CAR</button>
 
     <div id="hud">
         <div>TIME: <span id="hud-time" class="hud-val">0.00s</span></div>
@@ -278,7 +279,8 @@
         startTime: 0,
         logMsg: "",
         shiftError: false,
-        screechPlayed: false 
+        screechPlayed: false,
+        muted: false
     };
 
     let shifterX = 1; 
@@ -296,6 +298,7 @@
     // --- SYNTHESIZED WEB AUDIO API AUDIO ENGINE ---
     const AudioEngine = {
         ctx: null,
+        masterGain: null,
         engineOsc1: null,
         engineOsc2: null,
         engineGain: null,
@@ -305,13 +308,25 @@
 
         init() {
             if (this.initialized) {
-                // Proactively wake context state loops if iOS suspended them
+                // Wake up context loops if iOS suspended them
                 if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
                 return;
             }
             try {
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 
+                // Establish master gain controller for easy muting
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.connect(this.ctx.destination);
+                this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
+
+                // iOS Silent Buffer Trick to wake hardware channel
+                const buffer = this.ctx.createBuffer(1, 1, 22050);
+                const source = this.ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(this.masterGain);
+                source.start(0);
+
                 this.engineOsc1 = this.ctx.createOscillator();
                 this.engineOsc2 = this.ctx.createOscillator();
                 this.engineGain = this.ctx.createGain();
@@ -326,7 +341,7 @@
                 this.engineOsc1.connect(lowpass);
                 this.engineOsc2.connect(lowpass);
                 lowpass.connect(this.engineGain);
-                this.engineGain.connect(this.ctx.destination);
+                this.engineGain.connect(this.masterGain);
                 
                 this.engineGain.gain.setValueAtTime(0.12, this.ctx.currentTime);
                 this.engineOsc1.start(0);
@@ -352,7 +367,7 @@
 
                 this.windNoiseNode.connect(windFilter);
                 windFilter.connect(this.windGainNode);
-                this.windGainNode.connect(this.ctx.destination);
+                this.windGainNode.connect(this.masterGain);
                 this.windNoiseNode.start(0);
 
                 this.initialized = true;
@@ -360,6 +375,13 @@
             } catch (e) {
                 console.error("Audio Engine setup failed:", e);
             }
+        },
+
+        setMute(isMuted) {
+            if (!this.initialized) return;
+            // Instantly control master level
+            const vol = isMuted ? 0 : 1;
+            this.masterGain.gain.setValueAtTime(vol, this.ctx.currentTime);
         },
 
         update(rpm, speed, gas) {
@@ -386,7 +408,7 @@
             gain.gain.setValueAtTime(volume, this.ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
             osc.connect(gain);
-            gain.connect(this.ctx.destination);
+            gain.connect(this.masterGain);
             osc.start(0);
             osc.stop(this.ctx.currentTime + duration);
         },
@@ -408,7 +430,7 @@
 
             osc.connect(filter);
             filter.connect(gain);
-            gain.connect(this.ctx.destination);
+            gain.connect(this.masterGain);
             osc.start(0);
             osc.stop(this.ctx.currentTime + 0.4);
         },
@@ -427,6 +449,7 @@
         nosArm: document.getElementById('btn-nos-arm'),
         nosLaunch: document.getElementById('btn-nos-launch'),
         pov: document.getElementById('pov-toggle'),
+        sound: document.getElementById('sound-toggle'),
         stage: document.getElementById('stage-btn'),
         quadrant: document.getElementById('quadrant-zone'),
         gates: document.querySelectorAll('.shift-gate'),
@@ -439,9 +462,23 @@
     };
 
     function bindButton(element, onPress, onRelease) {
-        element.addEventListener('pointerdown', (e) => { e.preventDefault(); AudioEngine.init(); element.classList.add('active'); onPress(); });
-        element.addEventListener('pointerup', (e) => { e.preventDefault(); element.classList.remove('active'); onRelease(); });
-        element.addEventListener('pointerleave', (e) => { if(element.classList.contains('active')) { element.classList.remove('active'); onRelease(); } });
+        // iOS requires user gestures to be unobstructed by e.preventDefault() on down triggers
+        element.addEventListener('pointerdown', () => { 
+            AudioEngine.init(); 
+            element.classList.add('active'); 
+            onPress(); 
+        });
+        element.addEventListener('pointerup', (e) => { 
+            e.preventDefault(); 
+            element.classList.remove('active'); 
+            onRelease(); 
+        });
+        element.addEventListener('pointerleave', (e) => { 
+            if(element.classList.contains('active')) { 
+                element.classList.remove('active'); 
+                onRelease(); 
+            } 
+        });
     }
 
     bindButton(UI.gas, () => { state.gas = true; }, () => { state.gas = false; });
@@ -452,6 +489,17 @@
     UI.nosArm.addEventListener('click', () => { AudioEngine.init(); state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); });
     UI.pov.addEventListener('click', () => { AudioEngine.init(); state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
     UI.stage.addEventListener('click', () => { AudioEngine.init(); resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
+
+    // Sound Button Logic
+    UI.sound.addEventListener('click', () => {
+        // Toggling this is a direct user gesture, which iOS Webkit completely respects!
+        AudioEngine.init();
+        state.muted = !state.muted;
+        AudioEngine.setMute(state.muted);
+        UI.sound.innerText = state.muted ? "🔇 SOUND: OFF" : "🔊 SOUND: ON";
+        UI.sound.style.borderColor = state.muted ? "#ff3333" : "#00ffcc";
+        UI.sound.style.color = state.muted ? "#ff3333" : "#00ffcc";
+    });
 
     // --- ADVANCED COGNIZANT MULTI-TOUCH COORD SCANNER ---
     function processShiftAtCoords(clientX, clientY) {
@@ -588,7 +636,7 @@
         let horizon = canvas.height * 0.45;
         let playerY = canvas.height * 0.85;
         let horizonX = canvas.width * 0.5; 
-        let camOffsetLane = 0;             
+        let camOffsetLane = 0;            
         
         if (state.pov === 'inside') camOffsetLane = -1; 
         
