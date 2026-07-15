@@ -174,7 +174,8 @@
             border-color: #fff;
             box-shadow: 0 0 8px #ffcc00;
         }
-        .shift-gate.blank { opacity: 0.1; pointer-events: none; }
+        .shift-gate.blank { opacity: 0.15; }
+        .shift-gate.blank.active { background: #333; border-color: #555; box-shadow: none; color: #1a1a1a; }
 
         @keyframes pulse {
             from { box-shadow: 0 0 2px #ff0000; }
@@ -209,15 +210,15 @@
         </div>
         
         <div class="shifter-quadrant" id="quadrant-zone">
-            <div class="shift-gate" data-gear="1">1</div>
-            <div class="shift-gate" data-gear="3">3</div>
-            <div class="shift-gate" data-gear="5">5</div>
-            <div class="shift-gate blank"></div>
-            <div class="shift-gate active" data-gear="0">N</div>
-            <div class="shift-gate blank"></div>
-            <div class="shift-gate" data-gear="2">2</div>
-            <div class="shift-gate" data-gear="4">4</div>
-            <div class="shift-gate" data-gear="6">6</div>
+            <div class="shift-gate" data-gear="1" data-x="0" data-y="0">1</div>
+            <div class="shift-gate" data-gear="3" data-x="1" data-y="0">3</div>
+            <div class="shift-gate" data-gear="5" data-x="2" data-y="0">5</div>
+            <div class="shift-gate blank" data-x="0" data-y="1"></div>
+            <div class="shift-gate active" data-gear="0" data-x="1" data-y="1">N</div>
+            <div class="shift-gate blank" data-x="2" data-y="1"></div>
+            <div class="shift-gate" data-gear="2" data-x="0" data-y="2">2</div>
+            <div class="shift-gate" data-gear="4" data-x="1" data-y="2">4</div>
+            <div class="shift-gate" data-gear="6" data-x="2" data-y="2">6</div>
         </div>
 
         <div class="btn" id="btn-clutch-r">CLUTCH</div>
@@ -263,14 +264,144 @@
         treeStep: 0,
         startTime: 0,
         logMsg: "",
-        shiftError: false
+        shiftError: false,
+        screechPlayed: false 
     };
 
+    // Rigid Mechanical H-Pattern Grid Tracking (0=Left, 1=Center, 2=Right || 0=Top, 1=Rail, 2=Bottom)
+    let shifterX = 1; 
+    let shifterY = 1; 
+    let lastTime = performance.now();
+
+    // Calibrated close-ratio parameters matching 150MPH @ 6800 RPM in 6th gear
     const MAX_RPM = 7500;
     const REDLINE = 6800;
     const IDLE_RPM = 1000;
-    const GEAR_RATIOS = [0, 3.25, 2.22, 1.55, 1.18, 0.92, 0.75]; 
+    const GEAR_RATIOS = [0, 2.90, 2.10, 1.64, 1.33, 1.10, 0.92]; 
     const FINAL_DRIVE = 4.10;
+    const VELOCITY_CONSTANT = 6.989; 
+
+    // --- SYNTHESIZED WEB AUDIO API AUDIO ENGINE ---
+    const AudioEngine = {
+        ctx: null,
+        engineOsc1: null,
+        engineOsc2: null,
+        engineGain: null,
+        windNoiseNode: null,
+        windGainNode: null,
+        initialized: false,
+
+        init() {
+            if (this.initialized) return;
+            try {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                this.engineOsc1 = this.ctx.createOscillator();
+                this.engineOsc2 = this.ctx.createOscillator();
+                this.engineGain = this.ctx.createGain();
+                
+                this.engineOsc1.type = 'sawtooth';
+                this.engineOsc2.type = 'triangle';
+                
+                let lowpass = this.ctx.createBiquadFilter();
+                lowpass.type = 'lowpass';
+                lowpass.frequency.setValueAtTime(280, this.ctx.currentTime);
+
+                this.engineOsc1.connect(lowpass);
+                this.engineOsc2.connect(lowpass);
+                lowpass.connect(this.engineGain);
+                this.engineGain.connect(this.ctx.destination);
+                
+                this.engineGain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                this.engineOsc1.start(0);
+                this.engineOsc2.start(0);
+
+                let bufferSize = 2 * this.ctx.sampleRate;
+                let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                let output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+                
+                this.windNoiseNode = this.ctx.createBufferSource();
+                this.windNoiseNode.buffer = noiseBuffer;
+                this.windNoiseNode.loop = true;
+
+                let windFilter = this.ctx.createBiquadFilter();
+                windFilter.type = 'lowpass';
+                windFilter.frequency.setValueAtTime(180, this.ctx.currentTime);
+
+                this.windGainNode = this.ctx.createGain();
+                this.windGainNode.gain.setValueAtTime(0.0, this.ctx.currentTime);
+
+                this.windNoiseNode.connect(windFilter);
+                windFilter.connect(this.windGainNode);
+                this.windGainNode.connect(this.ctx.destination);
+                this.windNoiseNode.start(0);
+
+                this.initialized = true;
+            } catch (e) {
+                console.error("Audio Engine initialization failed:", e);
+            }
+        },
+
+        update(rpm, speed, gas) {
+            if (!this.initialized) return;
+            let baseFreq = 22 + (rpm / 24);
+            this.engineOsc1.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
+            this.engineOsc2.frequency.setValueAtTime(baseFreq * 0.5, this.ctx.currentTime);
+
+            let loadGain = gas ? 0.22 : 0.08;
+            if (state.gear === 0) loadGain *= 0.7; 
+            this.engineGain.gain.linearRampToValueAtTime(loadGain, this.ctx.currentTime + 0.02);
+
+            let mph = speed * 0.681818;
+            let targetWindVolume = Math.min(mph / 320, 0.25);
+            this.windGainNode.gain.setValueAtTime(targetWindVolume, this.ctx.currentTime);
+        },
+
+        playTone(freq, type, duration, volume) {
+            if (!this.initialized) return;
+            let osc = this.ctx.createOscillator();
+            let gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(0);
+            osc.stop(this.ctx.currentTime + duration);
+        },
+
+        playScreech() {
+            if (!this.initialized) return;
+            let osc = this.ctx.createOscillator();
+            let gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(1200, this.ctx.currentTime + 0.25);
+            
+            let filter = this.ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1500, this.ctx.currentTime);
+
+            gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(0);
+            osc.stop(this.ctx.currentTime + 0.4);
+        },
+
+        playGrind() {
+            if (!this.initialized) return;
+            this.playTone(140, 'sawtooth', 0.22, 0.35);
+            this.playTone(145, 'triangle', 0.22, 0.35);
+        }
+    };
 
     const UI = {
         gas: document.getElementById('btn-gas'),
@@ -281,7 +412,7 @@
         pov: document.getElementById('pov-toggle'),
         stage: document.getElementById('stage-btn'),
         quadrant: document.getElementById('quadrant-zone'),
-        gates: document.querySelectorAll('.shift-gate[data-gear]'),
+        gates: document.querySelectorAll('.shift-gate'),
         hudTime: document.getElementById('hud-time'),
         hudDist: document.getElementById('hud-dist'),
         hudGear: document.getElementById('hud-gear'),
@@ -291,7 +422,7 @@
     };
 
     function bindButton(element, onPress, onRelease) {
-        element.addEventListener('pointerdown', (e) => { e.preventDefault(); element.classList.add('active'); onPress(); });
+        element.addEventListener('pointerdown', (e) => { e.preventDefault(); AudioEngine.init(); element.classList.add('active'); onPress(); });
         element.addEventListener('pointerup', (e) => { e.preventDefault(); element.classList.remove('active'); onRelease(); });
         element.addEventListener('pointerleave', (e) => { if(element.classList.contains('active')) { element.classList.remove('active'); onRelease(); } });
     }
@@ -301,15 +432,30 @@
     bindButton(UI.clutchR, () => { state.clutchRight = true; }, () => { state.clutchRight = false; });
     bindButton(UI.nosLaunch, () => { if(state.nosArmed) state.nosEngaged = true; }, () => { state.nosEngaged = false; });
     
-    UI.nosArm.addEventListener('click', () => { state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); });
-    UI.pov.addEventListener('click', () => { state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
-    UI.stage.addEventListener('click', () => { resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
+    UI.nosArm.addEventListener('click', () => { AudioEngine.init(); state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); });
+    UI.pov.addEventListener('click', () => { AudioEngine.init(); state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
+    UI.stage.addEventListener('click', () => { AudioEngine.init(); resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
 
+    // --- STALALMENT-PROOF SHIFTER GRID STATE-MACHINE (TOUCH & MOUSE DRAGS) ---
     function processShiftAtCoords(clientX, clientY) {
         let targetElement = document.elementFromPoint(clientX, clientY);
-        if (targetElement && targetElement.classList.contains('shift-gate') && !targetElement.classList.contains('blank')) {
-            let targetGear = parseInt(targetElement.getAttribute('data-gear'));
-            if (state.gear !== targetGear) attemptShift(targetGear);
+        if (targetElement && targetElement.classList.contains('shift-gate')) {
+            let tx = parseInt(targetElement.getAttribute('data-x'));
+            let ty = parseInt(targetElement.getAttribute('data-y'));
+            
+            if (shifterX !== tx || shifterY !== ty) {
+                let dx = Math.abs(tx - shifterX);
+                let dy = Math.abs(ty - shifterY);
+                
+                // Enforce rigorous H-Pattern grid layout logic:
+                // 1. Thumb can only move exactly 1 step orthogonally at a time (dx + dy === 1)
+                // 2. Horizontal slides (dy === 0) are strictly locked unless current Y position sits on Neutral Rail (shifterY === 1)
+                if ((dx + dy === 1) && (dy === 0 ? shifterY === 1 : true)) {
+                    shifterX = tx;
+                    shifterY = ty;
+                    executeShiftEvaluation();
+                }
+            }
         }
     }
 
@@ -317,20 +463,77 @@
     UI.quadrant.addEventListener('touchstart', (e) => { if (e.touches.length > 0) processShiftAtCoords(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
 
     let isMouseShifting = false;
-    UI.quadrant.addEventListener('mousedown', (e) => { isMouseShifting = true; processShiftAtCoords(e.clientX, e.clientY); });
+    UI.quadrant.addEventListener('mousedown', (e) => { AudioEngine.init(); isMouseShifting = true; processShiftAtCoords(e.clientX, e.clientY); });
     window.addEventListener('mousemove', (e) => { if (isMouseShifting) processShiftAtCoords(e.clientX, e.clientY); });
     window.addEventListener('mouseup', () => { isMouseShifting = false; });
 
-    function attemptShift(targetGear) {
-        if (state.clutchLeft || state.clutchRight) {
-            state.gear = targetGear;
-            state.shiftError = false;
-        } else {
-            state.gear = 0;
-            if(targetGear !== 0) state.shiftError = true;
+    // Keyboard H-Pattern Listener Architecture
+    window.addEventListener('keydown', (e) => {
+        AudioEngine.init();
+        if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) {
+            e.preventDefault(); 
         }
+        switch (e.key.toLowerCase()) {
+            case 'x': state.gas = true; UI.gas.classList.add('active'); break;
+            case 'c': state.clutchLeft = true; state.clutchRight = true; UI.clutchL.classList.add('active'); UI.clutchR.classList.add('active'); break;
+            case 'a': state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); break;
+            case 'n': if (state.nosArmed) { state.nosEngaged = true; UI.nosLaunch.classList.add('active'); } break;
+            case 'arrowup':
+                if (shifterY > 0) { shifterY--; executeShiftEvaluation(); }
+                break;
+            case 'arrowdown':
+                if (shifterY < 2) { shifterY++; executeShiftEvaluation(); }
+                break;
+            case 'arrowleft':
+                if (shifterY === 1 && shifterX > 0) { shifterX--; executeShiftEvaluation(); }
+                break;
+            case 'arrowright':
+                if (shifterY === 1 && shifterX < 2) { shifterX++; executeShiftEvaluation(); }
+                break;
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        switch (e.key.toLowerCase()) {
+            case 'x': state.gas = false; UI.gas.classList.remove('active'); break;
+            case 'c': state.clutchLeft = false; state.clutchRight = false; UI.clutchL.classList.remove('active'); UI.clutchR.classList.remove('active'); break;
+            case 'n': state.nosEngaged = false; UI.nosLaunch.classList.remove('active'); break;
+        }
+    });
+
+    function executeShiftEvaluation() {
+        let targetGear = 0; 
+        if (shifterY === 0) {
+            if (shifterX === 0) targetGear = 1;
+            if (shifterX === 1) targetGear = 3;
+            if (shifterX === 2) targetGear = 5;
+        } else if (shifterY === 2) {
+            if (shifterX === 0) targetGear = 2;
+            if (shifterX === 1) targetGear = 4;
+            if (shifterX === 2) targetGear = 6;
+        }
+
+        if (state.clutchLeft || state.clutchRight) {
+            if (state.gear !== targetGear) {
+                state.gear = targetGear;
+                state.shiftError = false;
+                if (state.gear !== 0) AudioEngine.playTone(580, 'sine', 0.04, 0.25);
+            }
+        } else {
+            state.gear = 0; 
+            if (targetGear !== 0) {
+                state.shiftError = true;
+                AudioEngine.playGrind();
+            }
+        }
+        updateShifterVisuals();
+    }
+
+    function updateShifterVisuals() {
         UI.gates.forEach(g => {
-            if(parseInt(g.getAttribute('data-gear')) === state.gear) g.classList.add('active');
+            let gx = parseInt(g.getAttribute('data-x'));
+            let gy = parseInt(g.getAttribute('data-y'));
+            if (gx === shifterX && gy === shifterY) g.classList.add('active');
             else g.classList.remove('active');
         });
     }
@@ -338,44 +541,36 @@
     function resetRace() {
         state.time = 0; state.distance = 0; state.speed = 0; state.gear = 0; state.rpm = IDLE_RPM;
         state.aiDistance = 0; state.aiSpeed = 0; state.aiFinished = false;
-        state.raceState = 'idle'; state.logMsg = ""; attemptShift(0);
+        state.raceState = 'idle'; state.logMsg = ""; 
+        shifterX = 1; shifterY = 1; 
+        state.shiftError = false;
+        state.screechPlayed = false;
+        updateShifterVisuals();
+        lastTime = performance.now(); 
     }
 
-    // Advanced Matrix Perspective Projection Engine (Perfectly centers driver eye-line to their lane center)
+    // Perspective Projection Transformer
     function getProjection(objDistance, laneOffset = 0) {
-        // laneOffset mapping values: -1 = Player Lane, 0 = Center Safety Divider Wall, 1 = Enemy AI Lane
         let diff = objDistance - state.distance;
         let horizon = canvas.height * 0.45;
         let playerY = canvas.height * 0.85;
+        let horizonX = canvas.width * 0.5; 
+        let camOffsetLane = 0;             
         
-        let horizonX = canvas.width * 0.5; // Tracking reference center point
-        let camOffsetLane = 0;             // Camera begins centered on divider track line
-        
-        // REORGANIZE ROAD TO CENTER DRIVER'S LANE DIRECTLY UP THE MIDDLE
-        if (state.pov === 'inside') {
-            camOffsetLane = -1; // Locks the player's track center (-1) to the screen center line (horizonX)
-        }
+        if (state.pov === 'inside') camOffsetLane = -1; 
         
         let y = horizon + (playerY - horizon) / (1 + diff * 0.012);
         let scale = (y - horizon) / (playerY - horizon);
-        
         let laneSpacing = canvas.width * 0.24;
-        
-        // Matrix lane equation matches new parallel sight reference path tracking
         let x = horizonX + (laneOffset - camOffsetLane) * laneSpacing * scale;
         
         return { x: x, y: y, scale: scale, visible: (diff > -55 && diff < 1200) };
     }
 
-    // Engine Simulation Physics Core
-    let lastTime = performance.now();
-    function updatePhysics() {
-        let now = performance.now();
-        let dt = (now - lastTime) / 1000;
-        lastTime = now;
-        if (dt > 0.1) dt = 0.1;
-
+    // Simulation Loop Mechanics
+    function updatePhysics(dt) {
         if (state.raceState === 'staging' || state.raceState === 'countdown') {
+            let oldStep = state.treeStep;
             state.treeTimer += dt;
             if (state.treeStep === 1 && state.treeTimer > 0.6) { state.treeStep = 2; state.treeTimer = 0; state.raceState = 'countdown'; } 
             if (state.treeStep === 2 && state.treeTimer > 0.5) { state.treeStep = 3; state.treeTimer = 0; } 
@@ -384,35 +579,50 @@
             if (state.treeStep === 5 && state.treeTimer > 0.5) { 
                 state.treeStep = 6; state.treeTimer = 0; state.raceState = 'racing'; state.startTime = performance.now();
             }
+
+            if (state.treeStep !== oldStep) {
+                if (state.treeStep >= 3 && state.treeStep <= 5) {
+                    AudioEngine.playTone(440, 'sine', 0.12, 0.3); 
+                } else if (state.treeStep === 6) {
+                    AudioEngine.playTone(880, 'sine', 0.40, 0.4); 
+                }
+            }
         }
 
         if ((state.raceState === 'countdown' || state.raceState === 'staging') && !state.clutchRight && state.gear === 1 && state.speed === 0) {
             state.raceState = 'foul'; state.treeStep = 7; state.logMsg = "FOUL! JUMPED THE TREE!";
+            AudioEngine.playTone(220, 'sawtooth', 0.6, 0.45); 
         }
 
         let clutchEngaged = !(state.clutchLeft || state.clutchRight);
 
         if (state.gear === 0 || !clutchEngaged) {
             if (state.gas) {
-                state.rpm += 12000 * dt;
+                state.rpm += 15000 * dt;
                 if (state.rpm > MAX_RPM) state.rpm = MAX_RPM - (Math.random() * 200); 
             } else {
-                state.rpm -= 4000 * dt;
+                state.rpm -= 5000 * dt;
                 if (state.rpm < IDLE_RPM) state.rpm = IDLE_RPM;
             }
-            if (state.speed > 0) { state.speed -= 8 * dt; if (state.speed < 0) state.speed = 0; }
+            if (state.speed > 0) { state.speed -= 10 * dt; if (state.speed < 0) state.speed = 0; }
         } else {
-            let targetSpeedRatio = GEAR_RATIOS[state.gear] * FINAL_DRIVE * 0.12; 
+            let ratioMult = GEAR_RATIOS[state.gear] * FINAL_DRIVE * VELOCITY_CONSTANT;
             if (state.gas) {
-                let powerFactor = (state.rpm > REDLINE) ? 0.3 : 1.0; 
-                let nosBoost = state.nosEngaged ? 1.8 : 1.0;
-                let acc = (46 / GEAR_RATIOS[state.gear]) * powerFactor * nosBoost;
+                let powerFactor = (state.rpm > REDLINE) ? 0.15 : 1.0; 
+                let nosBoost = state.nosEngaged ? 1.45 : 1.0;
+                
+                if (state.speed === 0 && state.distance === 0 && state.raceState === 'racing' && !state.screechPlayed) {
+                    AudioEngine.playScreech();
+                    state.screechPlayed = true;
+                }
+
+                let acc = (54.5 / GEAR_RATIOS[state.gear]) * powerFactor * nosBoost - (state.speed * 0.075);
                 state.speed += acc * dt;
-                state.rpm = IDLE_RPM + (state.speed * targetSpeedRatio);
-                if (state.rpm > MAX_RPM) { state.rpm = MAX_RPM; state.speed = (state.rpm - IDLE_RPM) / targetSpeedRatio; }
+                state.rpm = IDLE_RPM + (state.speed * ratioMult);
+                if (state.rpm > MAX_RPM) { state.rpm = MAX_RPM; state.speed = (state.rpm - IDLE_RPM) / ratioMult; }
             } else {
-                state.speed -= 15 * dt;
-                state.rpm = IDLE_RPM + (state.speed * targetSpeedRatio);
+                state.speed -= 22 * dt;
+                state.rpm = IDLE_RPM + (state.speed * ratioMult);
                 if (state.rpm < IDLE_RPM) { state.rpm = IDLE_RPM; state.speed = 0; }
             }
         }
@@ -421,15 +631,15 @@
             state.time = (performance.now() - state.startTime) / 1000;
             
             let aiGear = 1;
-            if (state.time > 1.4) aiGear = 2;
-            if (state.time > 3.1) aiGear = 3;
-            if (state.time > 5.0) aiGear = 4;
-            if (state.time > 7.1) aiGear = 5;
+            if (state.time > 1.3) aiGear = 2;
+            if (state.time > 2.9) aiGear = 3;
+            if (state.time > 4.7) aiGear = 4;
+            if (state.time > 6.8) aiGear = 5;
 
-            let aiAcc = (49.5 / aiGear);
-            if ((state.time > 1.35 && state.time < 1.45) || (state.time > 3.05 && state.time < 3.15) || 
-                (state.time > 4.95 && state.time < 5.05) || (state.time > 7.05 && state.time < 7.15)) {
-                aiAcc = -12; 
+            let aiAcc = (53.8 / aiGear) - (state.aiSpeed * 0.072);
+            if ((state.time > 1.25 && state.time < 1.35) || (state.time > 2.85 && state.time < 2.95) || 
+                (state.time > 4.65 && state.time < 4.75) || (state.time > 6.75 && state.time < 6.85)) {
+                aiAcc = -15; 
             }
             state.aiSpeed += aiAcc * dt;
             if (state.aiSpeed < 0) state.aiSpeed = 0;
@@ -439,17 +649,19 @@
             if (state.distance >= 1320 && !state.aiFinished) {
                 state.raceState = 'finished';
                 state.logMsg = `PLAYER WINS! ET: ${state.time.toFixed(3)}s @ ${(state.speed * 0.681818).toFixed(1)} MPH`;
+                AudioEngine.playTone(660, 'sine', 0.5, 0.3);
             } else if (state.aiDistance >= 1320 && state.distance < 1320) {
                 state.aiFinished = true;
                 state.raceState = 'finished';
                 state.logMsg = `AI WINS (84 FIREBIRD)! ET: ${state.time.toFixed(3)}s`;
+                AudioEngine.playTone(330, 'sine', 0.5, 0.3);
             }
         } else if (state.raceState === 'finished' || state.raceState === 'foul') {
             state.distance += state.speed * dt;
             if (!state.aiFinished) state.aiDistance += state.aiSpeed * dt;
         }
 
-        updateHUD();
+        AudioEngine.update(state.rpm, state.speed, state.gas);
     }
 
     function updateHUD() {
@@ -461,9 +673,7 @@
         UI.hudAiDist.innerText = Math.floor(state.aiDistance) + " ft";
     }
 
-    // Graphics Engine Rendering Pipeline
     function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         let horizon = canvas.height * 0.45;
         
         let skyGrad = ctx.createLinearGradient(0,0,0,horizon);
@@ -472,11 +682,10 @@
 
         ctx.fillStyle = '#1b1b1b'; ctx.fillRect(0, horizon, canvas.width, canvas.height - horizon);
 
-        // Track footprint edge boundaries
-        let pFarLeft = getProjection(state.distance + 1000, -2.5);
-        let pCloseLeft = getProjection(state.distance, -2.5);
-        let pFarRight = getProjection(state.distance + 1000, 2.5);
-        let pCloseRight = getProjection(state.distance, 2.5);
+        let pFarLeft = getProjection(state.distance + 1000, -2.0);   
+        let pCloseLeft = getProjection(state.distance, -2.0);         
+        let pFarRight = getProjection(state.distance + 1000, 2.0);   
+        let pCloseRight = getProjection(state.distance, 2.0);         
 
         ctx.fillStyle = '#0f0f14';
         ctx.beginPath();
@@ -484,26 +693,35 @@
         ctx.lineTo(pCloseRight.x, canvas.height); ctx.lineTo(pFarRight.x, horizon);
         ctx.closePath(); ctx.fill();
 
-        // Project Lane Division Lines
-        ctx.strokeStyle = '#444'; ctx.lineWidth = 2; ctx.setLineDash([15, 20]);
-        let pTrackLeft = getProjection(state.distance, -1);
-        let pTrackRight = getProjection(state.distance, 1);
-        let pHorizonCenter = getProjection(state.distance + 1000, 0);
+        // 3D Dashed Lane Tracking Engine Calculations
+        ctx.strokeStyle = '#444';
+        let dashLength = 16;
+        let dashGap = 20;
+        let stride = dashLength + dashGap;
+        let lineStart = Math.floor(state.distance / stride) * stride - stride;
 
-        ctx.beginPath();
-        ctx.moveTo(pHorizonCenter.x, horizon); ctx.lineTo(pTrackLeft.x, canvas.height);
-        ctx.moveTo(pHorizonCenter.x, horizon); ctx.lineTo(pTrackRight.x, canvas.height);
-        ctx.stroke(); ctx.setLineDash([]);
+        for (let d = lineStart; d < state.distance + 800; d += stride) {
+            let pStartLeft = getProjection(d + dashLength, -1.0);
+            let pEndLeft = getProjection(d, -1.0);
+            let pStartRight = getProjection(d + dashLength, 1.0);
+            let pEndRight = getProjection(d, 1.0);
 
-        // Project Finish Line Strip Trap
+            if (pStartLeft.visible && pEndLeft.visible) {
+                ctx.lineWidth = 2.5 * pEndLeft.scale; 
+                ctx.beginPath(); ctx.moveTo(pStartLeft.x, pStartLeft.y); ctx.lineTo(pEndLeft.x, pEndLeft.y); ctx.stroke();
+            }
+            if (pStartRight.visible && pEndRight.visible) {
+                ctx.lineWidth = 2.5 * pEndRight.scale;
+                ctx.beginPath(); ctx.moveTo(pStartRight.x, pStartRight.y); ctx.lineTo(pEndRight.x, pEndRight.y); ctx.stroke();
+            }
+        }
+
         let finishProj = getProjection(1320, 0);
         if (finishProj.visible) {
-            let fL = getProjection(1320, -2.2);
-            let fR = getProjection(1320, 2.2);
+            let fL = getProjection(1320, -2.0);
+            let fR = getProjection(1320, 2.0);
 
-            ctx.fillStyle = '#e65c00'; 
-            ctx.fillRect(fL.x, finishProj.y, fR.x - fL.x, 6 * finishProj.scale);
-            
+            ctx.fillStyle = '#e65c00'; ctx.fillRect(fL.x, finishProj.y, fR.x - fL.x, 6 * finishProj.scale);
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 3 * finishProj.scale; ctx.setLineDash([4 * finishProj.scale, 4 * finishProj.scale]);
             ctx.beginPath(); ctx.moveTo(fL.x, finishProj.y + 2); ctx.lineTo(fR.x, finishProj.y + 2); ctx.stroke(); ctx.setLineDash([]);
 
@@ -513,7 +731,6 @@
             ctx.fillText("1/4 MILE TRAP", finishProj.x, finishProj.y - 100 * finishProj.scale);
         }
 
-        // Project Center Wall Divider
         let wallStart = Math.floor(state.distance / 30) * 30 - 30;
         for (let d = wallStart; d < state.distance + 700; d += 30) {
             let p1 = getProjection(d, 0);
@@ -537,19 +754,12 @@
             }
         }
 
-        // Project AI 1984 Pontiac Firebird (Lane Center Offset = 1)
         let aiProj = getProjection(state.aiDistance, 1);
-        if (aiProj.visible) {
-            drawOutsideFirebird(aiProj.x, aiProj.y, aiProj.scale);
-        }
+        if (aiProj.visible) drawOutsideFirebird(aiProj.x, aiProj.y, aiProj.scale);
 
-        // Project NHRA Christmas Tree (Distance = 0, Center Wall Offset = 0)
         let treeProj = getProjection(0, 0);
-        if (treeProj.visible) {
-            drawTree(treeProj.x, treeProj.y - 50 * treeProj.scale, treeProj.scale);
-        }
+        if (treeProj.visible) drawTree(treeProj.x, treeProj.y - 50 * treeProj.scale, treeProj.scale);
 
-        // Viewport Layering Routing Execution
         if (state.pov === 'outside') {
             let playerProj = getProjection(state.distance, -1);
             drawOutsideMustang(playerProj.x, playerProj.y, 1);
@@ -557,7 +767,6 @@
             drawInsideCockpit();
         }
 
-        // Snug Dynamic Result Box Overlay
         if (state.logMsg !== "") {
             ctx.font = 'bold 14px Courier New'; 
             let textMetrics = ctx.measureText(state.logMsg);
@@ -572,8 +781,6 @@
             ctx.fillText(state.logMsg, canvas.width * 0.5, boxY + boxHeight / 2);
             ctx.textBaseline = 'alphabetic'; 
         }
-
-        requestAnimationFrame(draw);
     }
 
     function drawTree(x, y, scale) {
@@ -655,101 +862,67 @@
         ctx.restore();
     }
 
-    // Inside Cockpit Rendering (MAX FIELD OF VIEW LOWERED DASHBOARD OPTIMIZATION)
     function drawInsideCockpit() {
-        // DASHBOARD DROPPED FROM 64% TO 72% FOR MAXIMUM SIGHTLINE AREA OVER THE COCKPIT COWL
         let dashY = canvas.height * 0.72; 
         
-        // --- 1. WINDSHIELD FRAME AND CABIN LAYER MASKS ---
-        ctx.fillStyle = '#141619'; // Main dark plastic interior trim base
-        ctx.fillRect(0, dashY, canvas.width, canvas.height - dashY); // Solid dash ledge
-        ctx.fillRect(0, 0, canvas.width, 30); // Top cabin roof line
+        ctx.fillStyle = '#141619'; ctx.fillRect(0, dashY, canvas.width, canvas.height - dashY); ctx.fillRect(0, 0, canvas.width, 30); 
         
-        // Left Structural A-Pillar (Driver Side Edge)
-        ctx.beginPath();
-        ctx.moveTo(0, 0); ctx.lineTo(canvas.width * 0.08, 30);
-        ctx.lineTo(canvas.width * 0.03, dashY); ctx.lineTo(0, dashY);
-        ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(canvas.width * 0.08, 30); ctx.lineTo(canvas.width * 0.03, dashY); ctx.lineTo(0, dashY); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width * 0.92, 30); ctx.lineTo(canvas.width * 0.97, dashY); ctx.lineTo(canvas.width, dashY); ctx.closePath(); ctx.fill();
 
-        // Right Structural A-Pillar (Far Passenger Side Edge)
-        ctx.beginPath();
-        ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width * 0.92, 30);
-        ctx.lineTo(canvas.width * 0.97, dashY); ctx.lineTo(canvas.width, dashY);
-        ctx.closePath(); ctx.fill();
-
-        // Rear View Mirror Setup
         ctx.fillStyle = '#08090a'; ctx.fillRect(canvas.width * 0.56, 30, 110, 26);
         ctx.strokeStyle = '#333'; ctx.strokeRect(canvas.width * 0.56, 30, 110, 26);
         ctx.fillStyle = '#223'; ctx.fillRect(canvas.width * 0.58, 33, 102, 20);
 
-        // --- 2. RETRO 1992 RECTANGULAR MUSTANG BINNACLE COWL ---
-        // PERFECTLY RE-CENTERED TO SIGHTLINE SEAT CORNER ON AXIS (canvas.width * 0.5)
-        let clusterLeft = canvas.width * 0.5 - 130; // Centered 260px wide assembly box
-        let clusterWidth = 260;
-        
-        ctx.fillStyle = '#1c1e22'; 
-        ctx.beginPath();
-        ctx.moveTo(clusterLeft, dashY);
-        ctx.lineTo(clusterLeft + 15, dashY - 45); 
-        ctx.lineTo(clusterLeft + clusterWidth - 15, dashY - 45);
-        ctx.lineTo(clusterLeft + clusterWidth, dashY);
-        ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5; ctx.stroke();
+        let clusterLeft = canvas.width * 0.5 - 130; let clusterWidth = 260;
+        ctx.fillStyle = '#1c1e22'; ctx.beginPath(); ctx.moveTo(clusterLeft, dashY); ctx.lineTo(clusterLeft + 15, dashY - 45); ctx.lineTo(clusterLeft + clusterWidth - 15, dashY - 45); ctx.lineTo(clusterLeft + clusterWidth, dashY); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5; ctx.stroke();
+        ctx.fillStyle = '#0a0b0d'; ctx.fillRect(clusterLeft + 18, dashY - 39, clusterWidth - 36, 39);
 
-        ctx.fillStyle = '#0a0b0d';
-        ctx.fillRect(clusterLeft + 18, dashY - 39, clusterWidth - 36, 39);
-
-        // Cluster Dial Telemetry Nodes
         function drawCockpitGauge(cx, cy, radius, value, maxVal, label, color) {
             ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
             ctx.strokeStyle = '#2d3035'; ctx.lineWidth = 1.5; ctx.stroke();
-
             ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath();
             let startAng = Math.PI * 0.8; let endAng = Math.PI * 2.2;
             let currentAng = startAng + ((value / maxVal) * (endAng - startAng));
             ctx.arc(cx, cy, radius - 3, startAng, currentAng); ctx.stroke();
-
-            ctx.strokeStyle = '#ff3300'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx, cy);
-            ctx.lineTo(cx + Math.cos(currentAng) * (radius - 5), cy + Math.sin(currentAng) * (radius - 5)); ctx.stroke();
-
-            ctx.fillStyle = '#aaa'; ctx.font = 'bold 8px Helvetica'; ctx.textAlign = 'center';
-            ctx.fillText(label, cx, cy + radius - 9);
+            ctx.strokeStyle = '#ff3300'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(currentAng) * (radius - 5), cy + Math.sin(currentAng) * (radius - 5)); ctx.stroke();
+            ctx.fillStyle = '#aaa'; ctx.font = 'bold 8px Helvetica'; ctx.textAlign = 'center'; ctx.fillText(label, cx, cy + radius - 9);
         }
 
         let gaugeY = dashY - 18;
         drawCockpitGauge(clusterLeft + 60, gaugeY, 19, state.rpm, MAX_RPM, "RPM", '#ffcc00');
         drawCockpitGauge(clusterLeft + 125, gaugeY, 19, state.speed * 0.681818, 160, "MPH", '#00ffcc');
         
-        // Digital gear layout container box
         ctx.fillStyle = '#151515'; ctx.fillRect(clusterLeft + 172, dashY - 28, 22, 18);
         ctx.fillStyle = state.shiftError ? '#ff0000' : '#00ff00'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
         ctx.fillText(state.shiftError ? "E" : (state.gear === 0 ? "N" : state.gear), clusterLeft + 183, dashY - 15);
 
-        // 5-Inch Mechanical Dashboard Shift Light Pod
         let lightColor = (state.rpm >= REDLINE) ? '#ff0000' : '#220000';
         ctx.fillStyle = '#08080a'; ctx.fillRect(clusterLeft + clusterWidth - 8, dashY - 52, 22, 22); 
         ctx.fillStyle = lightColor; ctx.beginPath(); ctx.arc(clusterLeft + clusterWidth + 3, dashY - 41, 8, 0, Math.PI*2); ctx.fill();
         ctx.strokeStyle = '#444'; ctx.stroke();
 
-        // --- 3. CENTERED 3-SPOKE PERFORMANCE DRAG WHEEL ---
-        // Pushed straight to absolute screen horizontal center mapping reference
-        let wheelX = canvas.width * 0.5 - 10;
-        let wheelY = dashY + 32;
-
-        ctx.save();
-        ctx.strokeStyle = '#0d0d0f'; ctx.lineWidth = 11;
-        ctx.shadowColor = '#000'; ctx.shadowBlur = 8; 
-        ctx.beginPath();
-        ctx.arc(wheelX, wheelY, 65, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-
-        ctx.fillStyle = '#1c1e22'; ctx.beginPath(); ctx.arc(wheelX, wheelY, 15, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = '#111'; ctx.stroke();
+        let wheelX = canvas.width * 0.5 - 10; let wheelY = dashY + 32;
+        ctx.save(); ctx.strokeStyle = '#0d0d0f'; ctx.lineWidth = 11; ctx.shadowColor = '#000'; ctx.shadowBlur = 8; ctx.beginPath(); ctx.arc(wheelX, wheelY, 65, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+        ctx.fillStyle = '#1c1e22'; ctx.beginPath(); ctx.arc(wheelX, wheelY, 15, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#111'; ctx.stroke();
     }
 
-    function runLoop() { updatePhysics(); draw(); }
-    setInterval(runLoop, 1000 / 60);
+    // --- LEAK-FREE Refresh Loop Engine ---
+    function unifiedGameLoop() {
+        let now = performance.now();
+        let dt = (now - lastTime) / 1000;
+        lastTime = now;
+
+        if (dt > 0.1) dt = 0.1;
+
+        updatePhysics(dt);
+        updateHUD(); 
+        draw();
+
+        requestAnimationFrame(unifiedGameLoop);
+    }
+
+    requestAnimationFrame(unifiedGameLoop);
 </script>
 
 </body>
