@@ -177,7 +177,7 @@
             justify-content: center;
             border-radius: 6px;
         }
-        .shift-gate.active {
+        .shifter-quadrant .shift-gate.active {
             background: #ffcc00;
             color: #000;
             border-color: #fff;
@@ -206,7 +206,7 @@
         <div>RPM: <span id="hud-rpm" class="hud-val">1000</span></div>
         <div>MPH: <span id="hud-mph" class="hud-val">0</span></div>
         <div>AI DIST: <span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div>VER: <span class="hud-ver">1.8</span></div>
+        <div>VER: <span class="hud-ver">1.9</span></div>
     </div>
 
     <div class="control-zone" id="left-controls">
@@ -277,7 +277,7 @@
         logMsg: "",
         shiftError: false,
         screechPlayed: false,
-        muted: true // Muted by default so user activation unlocks the hardware cleanly
+        muted: true 
     };
 
     let shifterX = 1; 
@@ -291,7 +291,11 @@
     const FINAL_DRIVE = 4.10;
     const VELOCITY_CONSTANT = 6.989; 
 
-    // --- ARCANE MEDIASTREAM PROFILE UNLOCK AUDIO ENGINE ---
+    // Lightweight, responsive bypass stream trigger
+    const SILENT_WAV_B64 = "UklGRiQAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+    let silentAudio = null;
+
+    // --- SYNTHESIZED MEDIASTREAM AUDIO ENGINE ---
     const AudioEngine = {
         ctx: null,
         masterGain: null,
@@ -303,6 +307,7 @@
         windNoiseNode: null,
         windGainNode: null,
         initialized: false,
+        initializing: false, // Core execution block to safeguard keyboard repeat crashes
 
         async init() {
             if (this.initialized) {
@@ -310,9 +315,10 @@
                 if (this.playbackEl && !state.muted) this.playbackEl.play().catch(() => {});
                 return;
             }
+            if (this.initializing) return; // Instantly drop concurrent recurring calls
+            this.initializing = true;
 
             try {
-                // Request native system level playback focus if hardware allows
                 if (navigator.audioSession) {
                     navigator.audioSession.type = "playback";
                 }
@@ -320,17 +326,16 @@
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 this.masterGain = this.ctx.createGain();
                 
-                // Construct the Live Audio Broadcast stream pipeline
+                // Pack live audio configurations into a media streaming pipeline
                 this.streamDest = this.ctx.createMediaStreamDestination();
                 this.masterGain.connect(this.streamDest);
                 
-                // Route stream into a media container to override Ambient/Silent parameters
                 this.playbackEl = new Audio();
                 this.playbackEl.srcObject = this.streamDest.stream;
                 
                 this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
 
-                // Synthesizers Setup
+                // Live Synthesizer Engine
                 this.engineOsc1 = this.ctx.createOscillator();
                 this.engineOsc2 = this.ctx.createOscillator();
                 this.engineGain = this.ctx.createGain();
@@ -350,7 +355,7 @@
                 this.engineOsc1.start(0);
                 this.engineOsc2.start(0);
 
-                // Noise Channels
+                // Live Noise Environment
                 let bufferSize = 2 * this.ctx.sampleRate;
                 let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 let output = noiseBuffer.getChannelData(0);
@@ -377,7 +382,9 @@
                     await this.playbackEl.play().catch(() => {});
                 }
             } catch (e) {
-                console.error("Audio Pipeline Generation Halt:", e);
+                console.error("Audio initialization sequence dropped:", e);
+            } finally {
+                this.initializing = false;
             }
         },
 
@@ -447,6 +454,12 @@
         }
     };
 
+    function createSilentAudio() {
+        if (silentAudio) return;
+        silentAudio = new Audio("data:audio/wav;base64," + SILENT_WAV_B64);
+        silentAudio.loop = true;
+    }
+
     const UI = {
         gas: document.getElementById('btn-gas'),
         clutchL: document.getElementById('btn-clutch-l'),
@@ -466,7 +479,7 @@
         hudAiDist: document.getElementById('hud-aidist')
     };
 
-    // Global First-Touch Activation Vector
+    // Viewport-wide Gesture Channel Unlocking
     let audioUnlocked = false;
     async function unlockAudio() {
         if (audioUnlocked) return;
@@ -479,8 +492,11 @@
     document.addEventListener('click', unlockAudio);
 
     function bindButton(element, onPress, onRelease) {
-        element.addEventListener('pointerdown', () => { 
-            AudioEngine.init(); 
+        element.addEventListener('pointerdown', (e) => { 
+            e.preventDefault(); // Kills mobile gesture recognition context (No more double-tap zoom!)
+            if (!AudioEngine.initialized && !AudioEngine.initializing) {
+                AudioEngine.init();
+            }
             element.classList.add('active'); 
             onPress(); 
         });
@@ -490,6 +506,7 @@
             onRelease(); 
         });
         element.addEventListener('pointerleave', (e) => { 
+            e.preventDefault();
             if(element.classList.contains('active')) { 
                 element.classList.remove('active'); 
                 onRelease(); 
@@ -502,12 +519,13 @@
     bindButton(UI.clutchR, () => { state.clutchRight = true; }, () => { state.clutchRight = false; });
     bindButton(UI.nosLaunch, () => { if(state.nosArmed) state.nosEngaged = true; }, () => { state.nosEngaged = false; });
     
-    UI.nosArm.addEventListener('click', () => { AudioEngine.init(); state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); });
-    UI.pov.addEventListener('click', () => { AudioEngine.init(); state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
-    UI.stage.addEventListener('click', () => { AudioEngine.init(); resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
+    UI.nosArm.addEventListener('click', (e) => { e.preventDefault(); if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); });
+    UI.pov.addEventListener('click', (e) => { e.preventDefault(); if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
+    UI.stage.addEventListener('click', (e) => { e.preventDefault(); if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
 
-    // Sound Interface Toggle Handler
-    UI.sound.addEventListener('click', async () => {
+    // Clean Sound Interface Module
+    UI.sound.addEventListener('click', async (e) => {
+        e.preventDefault();
         state.muted = !state.muted;
         await AudioEngine.init();
         AudioEngine.setMute(state.muted);
@@ -558,9 +576,49 @@
     }, { passive: true });
 
     let isMouseShifting = false;
-    UI.quadrant.addEventListener('mousedown', (e) => { AudioEngine.init(); isMouseShifting = true; processShiftAtCoords(e.clientX, e.clientY); });
+    UI.quadrant.addEventListener('mousedown', (e) => { 
+        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
+        isMouseShifting = true; 
+        processShiftAtCoords(e.clientX, e.clientY); 
+    });
     window.addEventListener('mousemove', (e) => { if (isMouseShifting) processShiftAtCoords(e.clientX, e.clientY); });
     window.addEventListener('mouseup', () => { isMouseShifting = false; });
+
+    // Keyboard Input Processing - Completely operational on desktop
+    window.addEventListener('keydown', (e) => {
+        if (!AudioEngine.initialized && !AudioEngine.initializing) {
+            AudioEngine.init();
+        }
+        if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) {
+            e.preventDefault(); 
+        }
+        switch (e.key.toLowerCase()) {
+            case 'x': state.gas = true; UI.gas.classList.add('active'); break;
+            case 'c': state.clutchLeft = true; state.clutchRight = true; UI.clutchL.classList.add('active'); UI.clutchR.classList.add('active'); break;
+            case 'a': state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); break;
+            case 'n': if (state.nosArmed) { state.nosEngaged = true; UI.nosLaunch.classList.add('active'); } break;
+            case 'arrowup':
+                if (shifterY > 0) { shifterY--; executeShiftEvaluation(); }
+                break;
+            case 'arrowdown':
+                if (shifterY < 2) { shifterY++; executeShiftEvaluation(); }
+                break;
+            case 'arrowleft':
+                if (shifterY === 1 && shifterX > 0) { shifterX--; executeShiftEvaluation(); }
+                break;
+            case 'arrowright':
+                if (shifterY === 1 && shifterX < 2) { shifterX++; executeShiftEvaluation(); }
+                break;
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        switch (e.key.toLowerCase()) {
+            case 'x': state.gas = false; UI.gas.classList.remove('active'); break;
+            case 'c': state.clutchLeft = false; state.clutchRight = false; UI.clutchL.classList.remove('active'); UI.clutchR.classList.remove('active'); break;
+            case 'n': state.nosEngaged = false; UI.nosLaunch.classList.remove('active'); break;
+        }
+    });
 
     function executeShiftEvaluation() {
         let targetGear = 0; 
