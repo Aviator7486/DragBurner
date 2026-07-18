@@ -43,19 +43,7 @@
             z-index: 1;
         }
 
-        /* Remote Version Tracker Label (v1.5) - Safe area between controls */
-        #version-tag {
-            position: absolute;
-            bottom: 10px;
-            left: 160px;
-            color: #333; /* Dark gray, stays out of the way but legible */
-            font-size: 11px;
-            font-weight: bold;
-            z-index: 100;
-            pointer-events: none;
-        }
-
-        /* Top HUD Layout */
+        /* Top HUD Layout - Integrated Version Box to guarantee visibility */
         #hud {
             position: absolute;
             top: 15px;
@@ -74,6 +62,7 @@
             font-size: 13px;
         }
         .hud-val { color: #0f0; }
+        .hud-ver { color: #ffcc00; }
 
         /* Top Button Styles */
         .top-btn {
@@ -98,7 +87,7 @@
             left: 20px;
         }
         #sound-toggle {
-            top: 54px; /* Stacks perfectly directly under POV button */
+            top: 54px; /* Stacked perfectly underneath POV toggle */
             left: 20px;
             border-color: #ff3333; /* Default Sound OFF State is Red */
             color: #ff3333;
@@ -206,7 +195,6 @@
 <body>
 
 <div id="game-container">
-    <div id="version-tag">v1.5</div>
     <button id="pov-toggle" class="top-btn">POV: OUTSIDE</button>
     <button id="sound-toggle" class="top-btn">🔇 SOUND: OFF</button>
     <button id="stage-btn" class="top-btn">STAGE CAR</button>
@@ -218,6 +206,7 @@
         <div>RPM: <span id="hud-rpm" class="hud-val">1000</span></div>
         <div>MPH: <span id="hud-mph" class="hud-val">0</span></div>
         <div>AI DIST: <span id="hud-aidist" class="hud-val">0 ft</span></div>
+        <div>VER: <span class="hud-ver">1.8</span></div>
     </div>
 
     <div class="control-zone" id="left-controls">
@@ -288,14 +277,13 @@
         logMsg: "",
         shiftError: false,
         screechPlayed: false,
-        muted: true // Explicitly starts muted so sound button acts as bypass catalyst
+        muted: true // Muted by default so user activation unlocks the hardware cleanly
     };
 
     let shifterX = 1; 
     let shifterY = 1; 
     let lastTime = performance.now();
 
-    // Calibrated close-ratio parameters matching 150MPH @ 6800 RPM in 6th gear
     const MAX_RPM = 7500;
     const REDLINE = 6800;
     const IDLE_RPM = 1000;
@@ -303,14 +291,12 @@
     const FINAL_DRIVE = 4.10;
     const VELOCITY_CONSTANT = 6.989; 
 
-    // --- iOS HARWARE SILENT SWITCH BYPASS CONFIG ---
-    const SILENT_WAV_B64 = "UklGRjUrAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YRErAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC2IA=";
-    let silentAudio = null;
-
-    // --- SYNTHESIZED WEB AUDIO API AUDIO ENGINE ---
+    // --- ARCANE MEDIASTREAM PROFILE UNLOCK AUDIO ENGINE ---
     const AudioEngine = {
         ctx: null,
         masterGain: null,
+        streamDest: null,
+        playbackEl: null,
         engineOsc1: null,
         engineOsc2: null,
         engineGain: null,
@@ -321,16 +307,30 @@
         async init() {
             if (this.initialized) {
                 if (this.ctx && this.ctx.state === 'suspended') await this.ctx.resume();
+                if (this.playbackEl && !state.muted) this.playbackEl.play().catch(() => {});
                 return;
             }
 
             try {
+                // Request native system level playback focus if hardware allows
+                if (navigator.audioSession) {
+                    navigator.audioSession.type = "playback";
+                }
+
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 this.masterGain = this.ctx.createGain();
-                this.masterGain.connect(this.ctx.destination);
+                
+                // Construct the Live Audio Broadcast stream pipeline
+                this.streamDest = this.ctx.createMediaStreamDestination();
+                this.masterGain.connect(this.streamDest);
+                
+                // Route stream into a media container to override Ambient/Silent parameters
+                this.playbackEl = new Audio();
+                this.playbackEl.srcObject = this.streamDest.stream;
+                
                 this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
 
-                // Engine Nodes
+                // Synthesizers Setup
                 this.engineOsc1 = this.ctx.createOscillator();
                 this.engineOsc2 = this.ctx.createOscillator();
                 this.engineGain = this.ctx.createGain();
@@ -350,7 +350,7 @@
                 this.engineOsc1.start(0);
                 this.engineOsc2.start(0);
 
-                // Wind Noise Nodes
+                // Noise Channels
                 let bufferSize = 2 * this.ctx.sampleRate;
                 let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 let output = noiseBuffer.getChannelData(0);
@@ -363,7 +363,6 @@
                 let windFilter = this.ctx.createBiquadFilter();
                 windFilter.type = 'lowpass';
                 windFilter.frequency.setValueAtTime(180, this.ctx.currentTime);
-                
                 this.windGainNode = this.ctx.createGain();
                 this.windGainNode.gain.setValueAtTime(0.0, this.ctx.currentTime);
 
@@ -373,15 +372,22 @@
                 this.windNoiseNode.start(0);
 
                 this.initialized = true;
+
+                if (!state.muted) {
+                    await this.playbackEl.play().catch(() => {});
+                }
             } catch (e) {
-                console.error("Audio init failed", e);
+                console.error("Audio Pipeline Generation Halt:", e);
             }
         },
 
         setMute(isMuted) {
-            if (!this.ctx) return;
+            if (!this.initialized) return;
             const vol = isMuted ? 0 : 1;
             this.masterGain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            if (!isMuted && this.playbackEl) {
+                this.playbackEl.play().catch(() => {});
+            }
         },
 
         update(rpm, speed, gas) {
@@ -441,12 +447,6 @@
         }
     };
 
-    function createSilentAudio() {
-        if (silentAudio) return;
-        silentAudio = new Audio("data:audio/wav;base64," + SILENT_WAV_B64);
-        silentAudio.loop = true;
-    }
-
     const UI = {
         gas: document.getElementById('btn-gas'),
         clutchL: document.getElementById('btn-clutch-l'),
@@ -466,26 +466,17 @@
         hudAiDist: document.getElementById('hud-aidist')
     };
 
-    // --- GLOBAL FIRST-TOUCH UNLOCK INTERCEPTOR ---
+    // Global First-Touch Activation Vector
     let audioUnlocked = false;
-    document.addEventListener('touchstart', async function unlockAudio(e) {
+    async function unlockAudio() {
         if (audioUnlocked) return;
         audioUnlocked = true;
-
-        createSilentAudio();
-        try {
-            await silentAudio.play();
-            console.log("iOS silent-switch bypass activated via primary viewport touch");
-        } catch (err) {
-            console.log("Bypass play track skipped", err);
-        }
-
         await AudioEngine.init();
-        AudioEngine.setMute(state.muted);
-
-        console.log("AudioContext state:", AudioEngine.ctx ? AudioEngine.ctx.state : "not created");
         document.removeEventListener('touchstart', unlockAudio);
-    }, { once: true });
+        document.removeEventListener('click', unlockAudio);
+    }
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('click', unlockAudio);
 
     function bindButton(element, onPress, onRelease) {
         element.addEventListener('pointerdown', () => { 
@@ -515,17 +506,9 @@
     UI.pov.addEventListener('click', () => { AudioEngine.init(); state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
     UI.stage.addEventListener('click', () => { AudioEngine.init(); resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
 
-    // Streamlined Clean Sound Toggle Button Click Hook
+    // Sound Interface Toggle Handler
     UI.sound.addEventListener('click', async () => {
         state.muted = !state.muted;
-        createSilentAudio();
-
-        if (!state.muted && silentAudio) {
-            try { await silentAudio.play(); } catch (e) {}
-        } else if (silentAudio) {
-            silentAudio.pause();
-        }
-
         await AudioEngine.init();
         AudioEngine.setMute(state.muted);
 
@@ -534,7 +517,7 @@
         UI.sound.style.color = state.muted ? "#ff3333" : "#00ffcc";
     });
 
-    // --- SHIFTER MULTI-TOUCH COORD SCANNER ---
+    // Multi-Touch Coordinates Shift Evaluator
     function processShiftAtCoords(clientX, clientY) {
         let targetElement = document.elementFromPoint(clientX, clientY);
         if (targetElement && targetElement.classList.contains('shift-gate')) {
@@ -578,40 +561,6 @@
     UI.quadrant.addEventListener('mousedown', (e) => { AudioEngine.init(); isMouseShifting = true; processShiftAtCoords(e.clientX, e.clientY); });
     window.addEventListener('mousemove', (e) => { if (isMouseShifting) processShiftAtCoords(e.clientX, e.clientY); });
     window.addEventListener('mouseup', () => { isMouseShifting = false; });
-
-    // Keyboard Input Processing
-    window.addEventListener('keydown', (e) => {
-        AudioEngine.init();
-        if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) {
-            e.preventDefault(); 
-        }
-        switch (e.key.toLowerCase()) {
-            case 'x': state.gas = true; UI.gas.classList.add('active'); break;
-            case 'c': state.clutchLeft = true; state.clutchRight = true; UI.clutchL.classList.add('active'); UI.clutchR.classList.add('active'); break;
-            case 'a': state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); break;
-            case 'n': if (state.nosArmed) { state.nosEngaged = true; UI.nosLaunch.classList.add('active'); } break;
-            case 'arrowup':
-                if (shifterY > 0) { shifterY--; executeShiftEvaluation(); }
-                break;
-            case 'arrowdown':
-                if (shifterY < 2) { shifterY++; executeShiftEvaluation(); }
-                break;
-            case 'arrowleft':
-                if (shifterY === 1 && shifterX > 0) { shifterX--; executeShiftEvaluation(); }
-                break;
-            case 'arrowright':
-                if (shifterY === 1 && shifterX < 2) { shifterX++; executeShiftEvaluation(); }
-                break;
-        }
-    });
-
-    window.addEventListener('keyup', (e) => {
-        switch (e.key.toLowerCase()) {
-            case 'x': state.gas = false; UI.gas.classList.remove('active'); break;
-            case 'c': state.clutchLeft = false; state.clutchRight = false; UI.clutchL.classList.remove('active'); UI.clutchR.classList.remove('active'); break;
-            case 'n': state.nosEngaged = false; UI.nosLaunch.classList.remove('active'); break;
-        }
-    });
 
     function executeShiftEvaluation() {
         let targetGear = 0; 
