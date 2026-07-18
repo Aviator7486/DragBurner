@@ -207,7 +207,7 @@
         <div>RPM: <span id="hud-rpm" class="hud-val">1000</span></div>
         <div>MPH: <span id="hud-mph" class="hud-val">0</span></div>
         <div>AI DIST: <span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div>VER: <span class="hud-ver">1.15</span></div>
+        <div>VER: <span class="hud-ver">1.19</span></div>
     </div>
 
     <div class="control-zone" id="left-controls">
@@ -532,8 +532,17 @@
     }
 
     bindButton(UI.gas, () => { state.gas = true; }, () => { state.gas = false; });
-    bindButton(UI.clutchL, () => { state.clutchLeft = true; }, () => { state.clutchLeft = false; });
-    bindButton(UI.clutchR, () => { state.clutchRight = true; }, () => { state.clutchRight = false; });
+    
+    // Cross-linked parallel configuration unifies both mobile buttons to act symmetrically as one cohesive hardware pedal
+    bindButton(UI.clutchL, 
+        () => { state.clutchLeft = true; state.clutchRight = true; UI.clutchR.classList.add('active'); }, 
+        () => { state.clutchLeft = false; state.clutchRight = false; UI.clutchR.classList.remove('active'); }
+    );
+    bindButton(UI.clutchR, 
+        () => { state.clutchLeft = true; state.clutchRight = true; UI.clutchL.classList.add('active'); }, 
+        () => { state.clutchLeft = false; state.clutchRight = false; UI.clutchL.classList.remove('active'); }
+    );
+    
     bindButton(UI.nosLaunch, () => { if(state.nosArmed) state.nosEngaged = true; }, () => { state.nosEngaged = false; });
     
     UI.nosArm.addEventListener('click', (e) => { e.preventDefault(); if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); });
@@ -554,6 +563,7 @@
     // --- MECHANICAL SHIFTER SIMULATOR ENGINE ---
     function attemptMoveShifter(tx, ty) {
         let currentY = shifterY;
+        let clutchPressed = state.clutchLeft || state.clutchRight;
         
         if (currentY === 1 && (ty === 0 || ty === 2)) {
             let targetGear = 0;
@@ -567,7 +577,7 @@
                 if (tx === 2) targetGear = 6;
             }
             
-            if (state.clutchLeft || state.clutchRight) {
+            if (clutchPressed) {
                 shifterX = tx;
                 shifterY = ty;
                 state.shiftError = false;
@@ -718,8 +728,18 @@
         return { x: x, y: y, scale: scale, visible: (diff > -55 && diff < 1200) };
     }
 
-    // --- HARMONIZED DUAL-VEHICLE PHYSICS ENGINE (TUNED FOR 9.0s BRACKET PASSES) ---
+    // --- HARMONIZED DUAL-VEHICLE PHYSICS ENGINE ---
     function updatePhysics(dt) {
+        let clutchPressed = state.clutchLeft || state.clutchRight;
+
+        // Instant hardware intercept hooks an early clutch drop in gear to fire the staging foul instantly
+        if ((state.raceState === 'countdown' || state.raceState === 'staging') && !clutchPressed && state.gear !== 0) {
+            state.raceState = 'foul'; 
+            state.treeStep = 7; 
+            state.logMsg = "FOUL! JUMPED THE TREE!";
+            AudioEngine.playTone(220, 'sawtooth', 0.6, 0.45); 
+        }
+
         if (state.raceState === 'staging' || state.raceState === 'countdown') {
             let oldStep = state.treeStep;
             state.treeTimer += dt;
@@ -740,14 +760,8 @@
             }
         }
 
-        if ((state.raceState === 'countdown' || state.raceState === 'staging') && !state.clutchRight && state.gear === 1 && state.speed === 0) {
-            state.raceState = 'foul'; state.treeStep = 7; state.logMsg = "FOUL! JUMPED THE TREE!";
-            AudioEngine.playTone(220, 'sawtooth', 0.6, 0.45); 
-        }
-
-        let clutchEngaged = !(state.clutchLeft || state.clutchRight);
-
-        if (state.gear === 0 || !clutchEngaged) {
+        // CORRECTED DRIVETRAIN CONDITION: If shifter is in Neutral (0) OR the clutch is held down (clutchPressed), engine free-revs and car drifts
+        if (state.gear === 0 || clutchPressed) {
             if (state.gas) {
                 state.rpm += 18000 * dt; 
                 if (state.rpm > MAX_RPM) state.rpm = MAX_RPM - (Math.random() * 150); 
@@ -761,6 +775,7 @@
             if (state.speed < 0) state.speed = 0;
             state.distance += state.speed * dt;
         } else {
+            // Mechanical Locking: Clutch is fully engaged (finger off button) and transmission is in gear
             let ratioMult = GEAR_RATIOS[state.gear] * FINAL_DRIVE * VELOCITY_CONSTANT;
             let mechanicalRpm = IDLE_RPM + (state.speed * ratioMult);
 
@@ -793,8 +808,6 @@
                 }
 
                 let nosBoost = state.nosEngaged ? 1.30 : 1.0; 
-                
-                // Tuned to 94.0: Delivers an exact 9.0s pass naturally, and low 8s on N2O activation
                 const MONSTER_HP_SCALE = 45.0; 
 
                 let engineForce = 0;
@@ -820,7 +833,7 @@
             }
         }
 
-        // Opponent (84 Firebird) Loop - Calibrated downward to match the true 9-second challenge timeline
+        // AI opponent processing loop
         if (state.raceState === 'racing') {
             state.time = (performance.now() - state.startTime) / 1000;
             
@@ -830,7 +843,6 @@
             if (state.time > 4.2) aiGear = 4;
             if (state.time > 6.2) aiGear = 5;
 
-            // AI baseline force coefficient adjusted from 55.0 to 39.5 to run a true 9.1s flat drag profile
             let aiAcc = (39.5 / aiGear) - (state.aiSpeed * 0.065);
             if ((state.time > 1.15 && state.time < 1.25) || (state.time > 2.55 && state.time < 2.65) || 
                 (state.time > 4.15 && state.time < 4.25) || (state.time > 6.15 && state.time < 6.25)) {
