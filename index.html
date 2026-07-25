@@ -65,7 +65,24 @@
         .hud-val { color: #0f0; }
         .hud-ver { color: #ffcc00; }
 
-        /* Reaction Readout Display Module centered perfectly underneath the Main HUD */
+        /* Telemetry Readout Containers */
+        #player-et-box {
+            position: absolute;
+            top: 56px;
+            left: 175px;
+            z-index: 10;
+            background: rgba(0,0,0,0.88);
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            color: #fff;
+            font-weight: bold;
+            font-size: 11px;
+            display: none;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
         #reaction-box {
             position: absolute;
             top: 56px;
@@ -83,6 +100,24 @@
             letter-spacing: 0.5px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
+
+        #ai-et-box {
+            position: absolute;
+            top: 56px;
+            right: 175px;
+            z-index: 10;
+            background: rgba(0,0,0,0.88);
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            color: #fff;
+            font-weight: bold;
+            font-size: 11px;
+            display: none;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
         #rt-val { font-size: 12px; }
 
         /* Top Button Styles */
@@ -108,9 +143,9 @@
             left: 20px;
         }
         #sound-toggle {
-            top: 54px; /* Stacked perfectly underneath POV toggle */
+            top: 54px;
             left: 20px;
-            border-color: #ff3333; /* Default Sound OFF State is Red */
+            border-color: #ff3333;
             color: #ff3333;
         }
         #stage-btn {
@@ -220,16 +255,17 @@
     <button id="stage-btn" class="top-btn">STAGE CAR</button>
 
     <div id="hud">
-        <div>TIME: <span id="hud-time" class="hud-val">0.00s</span></div>
         <div>DIST: <span id="hud-dist" class="hud-val">0 ft</span></div>
         <div>GEAR: <span id="hud-gear" class="hud-val">N</span></div>
         <div>RPM: <span id="hud-rpm" class="hud-val">1000</span></div>
         <div>MPH: <span id="hud-mph" class="hud-val">0</span></div>
         <div>AI DIST: <span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div>VER: <span class="hud-ver">1.27</span></div>
+        <div>VER: <span class="hud-ver">1.28</span></div>
     </div>
 
+    <div id="player-et-box">MUSTANG ET: <span id="player-et-val" class="hud-val">--</span></div>
     <div id="reaction-box">REACTION TIME: <span id="rt-val">--</span></div>
+    <div id="ai-et-box">FIREBIRD ET: <span id="ai-et-val" class="hud-val">--</span></div>
 
     <div class="control-zone" id="left-controls">
         <div class="btn" id="btn-gas">GAS</div>
@@ -289,10 +325,13 @@
         aiDistance: 0,
         aiSpeed: 0,
         aiFinished: false,
+        playerFinished: false,
+        playerEt: null,
+        aiEt: null,
         clutchLeft: false,
         clutchRight: false,
         gas: false,
-        gasSource: 'keyboard', // Tracks 'keyboard' vs 'touch' input source for gas boost
+        gasSource: 'keyboard',
         nosArmed: false,
         nosEngaged: false,
         treeTimer: 0,
@@ -492,12 +531,15 @@
         stage: document.getElementById('stage-btn'),
         quadrant: document.getElementById('quadrant-zone'),
         gates: document.querySelectorAll('.shift-gate'),
-        hudTime: document.getElementById('hud-time'),
         hudDist: document.getElementById('hud-dist'),
         hudGear: document.getElementById('hud-gear'),
         hudRpm: document.getElementById('hud-rpm'),
         hudMph: document.getElementById('hud-mph'),
         hudAiDist: document.getElementById('hud-aidist'),
+        playerEtBox: document.getElementById('player-et-box'),
+        playerEtVal: document.getElementById('player-et-val'),
+        aiEtBox: document.getElementById('ai-et-box'),
+        aiEtVal: document.getElementById('ai-et-val'),
         reactionBox: document.getElementById('reaction-box'),
         rtVal: document.getElementById('rt-val')
     };
@@ -732,7 +774,9 @@
 
     function resetRace() {
         state.time = 0; state.distance = 0; state.speed = 0; state.gear = 0; state.rpm = IDLE_RPM;
-        state.aiDistance = 0; state.aiSpeed = 0; state.aiFinished = false;
+        state.aiDistance = 0; state.aiSpeed = 0; 
+        state.aiFinished = false; state.playerFinished = false;
+        state.playerEt = null; state.aiEt = null;
         state.raceState = 'idle'; state.logMsg = ""; 
         shifterX = 1; shifterY = 1; 
         state.shiftError = false;
@@ -807,7 +851,6 @@
             if (state.speed < 0) state.speed = 0;
             state.distance += state.speed * dt;
         } else {
-            // Clutch is cleanly engaged and gear is selected
             let ratioMult = GEAR_RATIOS[state.gear] * FINAL_DRIVE * VELOCITY_CONSTANT;
             let mechanicalRpm = IDLE_RPM + (state.speed * ratioMult);
 
@@ -850,8 +893,7 @@
                     torqueFactor = 1.0 - (overPeakPct * overPeakPct * 0.35);
                 }
 
-                // DUAL-INPUT GAIN CALIBRATOR:
-                // Boosts power on touch controls to offset mobile touch sampling latency
+                // DUAL-INPUT GAIN CALIBRATOR
                 const TOUCH_HP_SCALE = 2.5;
                 let touchMultiplier = (state.gasSource === 'touch') ? TOUCH_HP_SCALE : 1.0;
 
@@ -911,17 +953,28 @@
             state.aiDistance += state.aiSpeed * dt;
         }
 
-        // ================= TRAP LINE WIN EVALUATIONS =================
-        if (state.raceState === 'racing') {
-            if (state.distance >= 1320 && !state.aiFinished) {
-                state.raceState = 'finished';
-                state.logMsg = `PLAYER WINS! ET: ${state.time.toFixed(3)}s @ ${(state.speed * 0.681818).toFixed(1)} MPH`;
-                AudioEngine.playTone(660, 'sine', 0.5, 0.3);
-            } else if (state.aiDistance >= 1320 && state.distance < 1320) {
-                state.aiFinished = true; 
-                state.raceState = 'finished';
-                state.logMsg = `AI WINS (84 FIREBIRD)! ET: ${state.time.toFixed(3)}s`;
-                AudioEngine.playTone(330, 'sine', 0.5, 0.3);
+        // ================= TRAP LINE WIN EVALUATIONS & ET RECORDING =================
+        if (state.raceState === 'racing' || state.raceState === 'finished') {
+            // Player Finish Line Check
+            if (state.distance >= 1320 && !state.playerFinished) {
+                state.playerFinished = true;
+                state.playerEt = state.time;
+                if (state.raceState === 'racing') {
+                    state.raceState = 'finished';
+                    state.logMsg = "PLAYER WINS! (92 NOTCHBACK)";
+                    AudioEngine.playTone(660, 'sine', 0.5, 0.3);
+                }
+            }
+
+            // AI Finish Line Check
+            if (state.aiDistance >= 1320 && !state.aiFinished) {
+                state.aiFinished = true;
+                state.aiEt = state.time;
+                if (state.raceState === 'racing') {
+                    state.raceState = 'finished';
+                    state.logMsg = "AI WINS! (84 FIREBIRD)";
+                    AudioEngine.playTone(330, 'sine', 0.5, 0.3);
+                }
             }
         }
 
@@ -929,13 +982,29 @@
     }
 
     function updateHUD() {
-        UI.hudTime.innerText = state.time.toFixed(2) + "s";
         UI.hudDist.innerText = Math.floor(state.distance) + " ft";
         UI.hudGear.innerText = state.gear !== 0 ? state.gear : (state.shiftError ? state.attemptedGear : "N");
         UI.hudRpm.innerText = Math.floor(state.rpm);
         UI.hudMph.innerText = Math.floor(state.speed * 0.681818); 
         UI.hudAiDist.innerText = Math.floor(state.aiDistance) + " ft";
 
+        // Display Player Trap Time (ET)
+        if (state.playerEt !== null) {
+            UI.playerEtBox.style.display = 'block';
+            UI.playerEtVal.innerText = state.playerEt.toFixed(3) + "s";
+        } else {
+            UI.playerEtBox.style.display = 'none';
+        }
+
+        // Display AI Trap Time (ET)
+        if (state.aiEt !== null) {
+            UI.aiEtBox.style.display = 'block';
+            UI.aiEtVal.innerText = state.aiEt.toFixed(3) + "s";
+        } else {
+            UI.aiEtBox.style.display = 'none';
+        }
+
+        // Display Reaction Time
         if (state.reactionTime !== null) {
             UI.reactionBox.style.display = 'block';
             if (state.reactionTime < 0) {
