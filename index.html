@@ -289,7 +289,7 @@
         <div class="hud-col"><span class="hud-title">RPM</span><span id="hud-rpm" class="hud-val">1000</span></div>
         <div class="hud-col"><span class="hud-title">MPH</span><span id="hud-mph" class="hud-val">0</span></div>
         <div class="hud-col"><span class="hud-title">AI DIST</span><span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.5</span></div>
+        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.6</span></div>
     </div>
 
     <div id="player-et-box">MUSTANG ET: <span id="player-et-val" class="hud-val">--</span></div>
@@ -368,7 +368,6 @@
         startTime: 0,
         logMsg: "",
         shiftError: false,
-        screechPlayed: false,
         muted: true,
         reactionTime: null
     };
@@ -469,7 +468,7 @@
                 this.windGainNode.connect(this.masterGain);
                 this.windNoiseNode.start(0);
 
-                // Continuous Launch Tire Squeal Engine
+                // Continuous U-2 Style Launch Tire Squeal Engine
                 this.squealOsc = this.ctx.createOscillator();
                 this.squealOsc.type = 'sawtooth';
                 this.squealOsc.frequency.setValueAtTime(1850, this.ctx.currentTime);
@@ -523,6 +522,7 @@
             let mph = speed * 0.681818;
             this.windGainNode.gain.setValueAtTime(Math.min(mph / 320, 0.25), this.ctx.currentTime);
 
+            // Continuous U-2 Launch Squeal Modulation
             if (isSpinning && !state.muted) {
                 let targetGain = Math.min(0.28, 0.12 + (rpm / 7500) * 0.18);
                 this.squealGain.gain.setValueAtTime(targetGain, this.ctx.currentTime);
@@ -533,7 +533,7 @@
             }
         },
 
-        // High-RPM Gear Shift Tire Bark
+        // High-RPM Gear Shift Tire Bark (U-2 Intercept Chirp)
         playTireChirp() {
             if (!this.initialized || state.muted) return;
             let osc = this.ctx.createOscillator();
@@ -557,29 +557,6 @@
 
             osc.start(0);
             osc.stop(this.ctx.currentTime + 0.16);
-        },
-
-        // Hard Launch Tire Screech Sweep
-        playScreech() {
-            if (!this.initialized || state.muted) return;
-            let osc = this.ctx.createOscillator();
-            let gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(880, this.ctx.currentTime);
-            osc.frequency.linearRampToValueAtTime(1200, this.ctx.currentTime + 0.25);
-            
-            let filter = this.ctx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.setValueAtTime(1500, this.ctx.currentTime);
-
-            gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
-
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(this.masterGain);
-            osc.start(0);
-            osc.stop(this.ctx.currentTime + 0.4);
         },
 
         playTone(freq, type, duration, volume) {
@@ -701,6 +678,7 @@
         () => { state.clutchLeft = false; state.clutchRight = false; UI.clutchL.classList.remove('active'); }
     );
     
+    // Nitrous Engage - ONLY active while held
     bindButton(UI.nosLaunch, () => { state.nosEngaged = true; }, () => { state.nosEngaged = false; });
     
     UI.nosArm.addEventListener('click', (e) => { 
@@ -880,7 +858,6 @@
         state.raceState = 'idle'; state.logMsg = ""; 
         shifterX = 1; shifterY = 1; 
         state.shiftError = false;
-        state.screechPlayed = false;
         state.reactionTime = null;
         updateShifterVisuals();
         lastTime = performance.now(); 
@@ -994,12 +971,7 @@
                     torqueFactor = 1.0 - (overPeakPct * overPeakPct * 0.35);
                 }
 
-                // Launch tire screech trigger
-                if (state.speed === 0 && state.distance === 0 && state.raceState === 'racing' && !state.screechPlayed) {
-                    AudioEngine.playScreech();
-                    state.screechPlayed = true;
-                }
-
+                // 1st Gear Wheelspin for U-2 Continuous Tire Squeal
                 if (state.gear === 1 && state.gas && state.rpm > 3200 && state.speed < 55) {
                     isTireSpinning = true;
                 }
@@ -1008,7 +980,8 @@
                 const TOUCH_HP_SCALE = 2.5;
                 let touchMultiplier = (state.gasSource === 'touch') ? TOUCH_HP_SCALE : 1.0;
 
-                let nosBoost = (state.nosEngaged || (state.nosArmed && state.gas)) ? 2.5 : 1.0; 
+                // Nitrous boost ONLY applies when Armed AND Engage button is held
+                let nosBoost = (state.nosArmed && state.nosEngaged) ? 2.5 : 1.0; 
                 const MONSTER_HP_SCALE = 45.0; 
 
                 let engineForce = 0;
@@ -1281,7 +1254,9 @@
         ctx.fillRect(w/2 - 32, -18, 22, 3); ctx.fillRect(w/2 - 32, -11, 22, 3);
 
         ctx.fillStyle = '#0a0a0a'; ctx.fillRect(-w/2 + 2, 0, 22, 18); ctx.fillRect(w/2 - 24, 0, 22, 18);
-        if (state.nosEngaged || (state.nosArmed && state.gas)) {
+        
+        // Nitrous Visual Purge ONLY when Armed AND Engage button is actively pressed
+        if (state.nosArmed && state.nosEngaged) {
             ctx.fillStyle = 'rgba(0, 220, 255, 0.75)';
             for (let i = 0; i < 4; i++) {
                 ctx.beginPath(); ctx.arc(-w/3 - (Math.random()*12), -38 - (Math.random()*8), 3 + Math.random()*5, 0, Math.PI*2);
@@ -1321,8 +1296,8 @@
         ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(canvas.width * 0.08, 30); ctx.lineTo(canvas.width * 0.03, dashY); ctx.lineTo(0, dashY); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width * 0.92, 30); ctx.lineTo(canvas.width * 0.97, dashY); ctx.lineTo(canvas.width, dashY); ctx.closePath(); ctx.fill();
 
-        // COCKPIT NITROUS VISUAL PURGE EFFECT
-        if (state.nosEngaged || (state.nosArmed && state.gas)) {
+        // COCKPIT NITROUS VISUAL PURGE EFFECT (ONLY when Armed AND Engage pressed)
+        if (state.nosArmed && state.nosEngaged) {
             ctx.fillStyle = 'rgba(0, 180, 255, 0.12)';
             ctx.fillRect(0, 30, canvas.width, dashY - 30);
 
@@ -1371,7 +1346,7 @@
         ctx.fillText(state.gear !== 0 ? state.gear : (state.shiftError ? state.attemptedGear : "N"), clusterLeft + 183, dashY - 15);
 
         // NOS Cockpit LED Light on dash
-        ctx.fillStyle = state.nosEngaged ? '#00e5ff' : (state.nosArmed ? '#ff3333' : '#112233');
+        ctx.fillStyle = (state.nosArmed && state.nosEngaged) ? '#00e5ff' : (state.nosArmed ? '#ff3333' : '#112233');
         ctx.fillRect(clusterLeft + 15, dashY - 28, 16, 10);
         ctx.strokeStyle = '#333'; ctx.strokeRect(clusterLeft + 15, dashY - 28, 16, 10);
 
