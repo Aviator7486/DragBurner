@@ -44,31 +44,42 @@
             z-index: 1;
         }
 
-        /* Top HUD Layout */
+        /* Top HUD Layout - Vertical Title/Value Stacking */
         #hud {
             position: absolute;
-            top: 15px;
+            top: 12px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
             display: flex;
-            gap: 15px;
+            gap: 18px;
             background: rgba(0,0,0,0.85);
-            padding: 8px 16px;
+            padding: 6px 16px;
             border-radius: 10px;
             border: 1px solid #444;
             color: #fff;
             pointer-events: none;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
         }
-        .hud-val { color: #0f0; }
-        .hud-ver { color: #ffcc00; }
+        .hud-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .hud-title {
+            font-size: 10px;
+            color: #aaa;
+            margin-bottom: 2px;
+        }
+        .hud-val { color: #0f0; font-size: 13px; }
+        .hud-ver { color: #ffcc00; font-size: 13px; }
 
         /* Telemetry Readout Containers */
         #player-et-box {
             position: absolute;
-            top: 56px;
+            top: 65px;
             left: 175px;
             z-index: 10;
             background: rgba(0,0,0,0.88);
@@ -81,11 +92,12 @@
             display: none;
             letter-spacing: 0.5px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            text-align: center;
         }
 
         #reaction-box {
             position: absolute;
-            top: 56px;
+            top: 65px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
@@ -99,11 +111,12 @@
             display: none;
             letter-spacing: 0.5px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            text-align: center;
         }
 
         #ai-et-box {
             position: absolute;
-            top: 56px;
+            top: 65px;
             right: 175px;
             z-index: 10;
             background: rgba(0,0,0,0.88);
@@ -116,6 +129,7 @@
             display: none;
             letter-spacing: 0.5px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            text-align: center;
         }
 
         #rt-val { font-size: 12px; }
@@ -255,12 +269,12 @@
     <button id="stage-btn" class="top-btn">STAGE CAR</button>
 
     <div id="hud">
-        <div>DIST: <span id="hud-dist" class="hud-val">0 ft</span></div>
-        <div>GEAR: <span id="hud-gear" class="hud-val">N</span></div>
-        <div>RPM: <span id="hud-rpm" class="hud-val">1000</span></div>
-        <div>MPH: <span id="hud-mph" class="hud-val">0</span></div>
-        <div>AI DIST: <span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div>VER: <span class="hud-ver">1.28</span></div>
+        <div class="hud-col"><span class="hud-title">DIST</span><span id="hud-dist" class="hud-val">0 ft</span></div>
+        <div class="hud-col"><span class="hud-title">GEAR</span><span id="hud-gear" class="hud-val">N</span></div>
+        <div class="hud-col"><span class="hud-title">RPM</span><span id="hud-rpm" class="hud-val">1000</span></div>
+        <div class="hud-col"><span class="hud-title">MPH</span><span id="hud-mph" class="hud-val">0</span></div>
+        <div class="hud-col"><span class="hud-title">AI DIST</span><span id="hud-aidist" class="hud-val">0 ft</span></div>
+        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">1.9</span></div>
     </div>
 
     <div id="player-et-box">MUSTANG ET: <span id="player-et-val" class="hud-val">--</span></div>
@@ -893,7 +907,7 @@
                     torqueFactor = 1.0 - (overPeakPct * overPeakPct * 0.35);
                 }
 
-                // DUAL-INPUT GAIN CALIBRATOR
+                // DUAL-INPUT GAIN CALIBRATOR (2.5 Multiplier for Touchscreen)
                 const TOUCH_HP_SCALE = 2.5;
                 let touchMultiplier = (state.gasSource === 'touch') ? TOUCH_HP_SCALE : 1.0;
 
@@ -930,9 +944,12 @@
         if (state.time > 4.2) aiGear = 4;
         if (state.time > 6.2) aiGear = 5;
 
-        if (state.raceState === 'racing') {
+        // Continuous Time Tracker during active run
+        if (state.raceState === 'racing' || state.raceState === 'finished') {
             state.time = (performance.now() - state.startTime) / 1000;
-            
+        }
+
+        if (state.raceState === 'racing' || (state.raceState === 'finished' && !state.aiFinished)) {
             let aiAcc = (80.0 / aiGear) - (state.aiSpeed * 0.065);
             
             if ((state.time > 1.15 && state.time < 1.25) || (state.time > 2.55 && state.time < 2.65) || 
@@ -940,7 +957,7 @@
                 aiAcc = -10; 
             }
             state.aiSpeed += aiAcc * dt;
-        } else if (state.raceState === 'finished' || state.raceState === 'foul') {
+        } else if (state.aiFinished || state.raceState === 'foul') {
             let aiAirDrag = state.aiSpeed * state.aiSpeed * 0.0005;
             state.aiSpeed -= (aiAirDrag + 15.0) * dt;
         } else {
@@ -953,9 +970,9 @@
             state.aiDistance += state.aiSpeed * dt;
         }
 
-        // ================= TRAP LINE WIN EVALUATIONS & ET RECORDING =================
+        // ================= TRAP LINE WIN EVALUATIONS & INDEPENDENT ET RECORDING =================
         if (state.raceState === 'racing' || state.raceState === 'finished') {
-            // Player Finish Line Check
+            // Player Finish Line Trap
             if (state.distance >= 1320 && !state.playerFinished) {
                 state.playerFinished = true;
                 state.playerEt = state.time;
@@ -966,7 +983,7 @@
                 }
             }
 
-            // AI Finish Line Check
+            // AI Finish Line Trap
             if (state.aiDistance >= 1320 && !state.aiFinished) {
                 state.aiFinished = true;
                 state.aiEt = state.time;
