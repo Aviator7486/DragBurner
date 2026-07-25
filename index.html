@@ -289,7 +289,7 @@
         <div class="hud-col"><span class="hud-title">RPM</span><span id="hud-rpm" class="hud-val">1000</span></div>
         <div class="hud-col"><span class="hud-title">MPH</span><span id="hud-mph" class="hud-val">0</span></div>
         <div class="hud-col"><span class="hud-title">AI DIST</span><span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.6</span></div>
+        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.7</span></div>
     </div>
 
     <div id="player-et-box">MUSTANG ET: <span id="player-et-val" class="hud-val">--</span></div>
@@ -368,6 +368,7 @@
         startTime: 0,
         logMsg: "",
         shiftError: false,
+        screechPlayed: false,
         muted: true,
         reactionTime: null
     };
@@ -417,7 +418,7 @@
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 this.masterGain = this.ctx.createGain();
 
-                // 1. MEDIASTREAM DESTINATION
+                // 1. MEDIASTREAM DESTINATION ONLY (Single pipeline)
                 this.streamDest = this.ctx.createMediaStreamDestination();
                 this.masterGain.connect(this.streamDest);
 
@@ -468,7 +469,7 @@
                 this.windGainNode.connect(this.masterGain);
                 this.windNoiseNode.start(0);
 
-                // Continuous U-2 Style Launch Tire Squeal Engine
+                // Continuous U-2 Launch Tire Squeal Engine
                 this.squealOsc = this.ctx.createOscillator();
                 this.squealOsc.type = 'sawtooth';
                 this.squealOsc.frequency.setValueAtTime(1850, this.ctx.currentTime);
@@ -980,8 +981,8 @@
                 const TOUCH_HP_SCALE = 2.5;
                 let touchMultiplier = (state.gasSource === 'touch') ? TOUCH_HP_SCALE : 1.0;
 
-                // Nitrous boost ONLY applies when Armed AND Engage button is held
-                let nosBoost = (state.nosArmed && state.nosEngaged) ? 2.5 : 1.0; 
+                // STRICT 3-WAY NITROUS BOOST CONDITION: Gas + Armed + Engage
+                let nosBoost = (state.gas && state.nosArmed && state.nosEngaged) ? 2.5 : 1.0; 
                 const MONSTER_HP_SCALE = 45.0; 
 
                 let engineForce = 0;
@@ -1255,8 +1256,8 @@
 
         ctx.fillStyle = '#0a0a0a'; ctx.fillRect(-w/2 + 2, 0, 22, 18); ctx.fillRect(w/2 - 24, 0, 22, 18);
         
-        // Nitrous Visual Purge ONLY when Armed AND Engage button is actively pressed
-        if (state.nosArmed && state.nosEngaged) {
+        // Nitrous Visual Purge ONLY when Gas + Armed + Engage button held
+        if (state.gas && state.nosArmed && state.nosEngaged) {
             ctx.fillStyle = 'rgba(0, 220, 255, 0.75)';
             for (let i = 0; i < 4; i++) {
                 ctx.beginPath(); ctx.arc(-w/3 - (Math.random()*12), -38 - (Math.random()*8), 3 + Math.random()*5, 0, Math.PI*2);
@@ -1296,8 +1297,8 @@
         ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(canvas.width * 0.08, 30); ctx.lineTo(canvas.width * 0.03, dashY); ctx.lineTo(0, dashY); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width * 0.92, 30); ctx.lineTo(canvas.width * 0.97, dashY); ctx.lineTo(canvas.width, dashY); ctx.closePath(); ctx.fill();
 
-        // COCKPIT NITROUS VISUAL PURGE EFFECT (ONLY when Armed AND Engage pressed)
-        if (state.nosArmed && state.nosEngaged) {
+        // COCKPIT NITROUS VISUAL PURGE EFFECT (ONLY when Gas + Armed + Engage pressed)
+        if (state.gas && state.nosArmed && state.nosEngaged) {
             ctx.fillStyle = 'rgba(0, 180, 255, 0.12)';
             ctx.fillRect(0, 30, canvas.width, dashY - 30);
 
@@ -1341,14 +1342,16 @@
         drawCockpitGauge(clusterLeft + 60, gaugeY, 19, state.rpm, MAX_RPM, "RPM", '#ffcc00');
         drawCockpitGauge(clusterLeft + 125, gaugeY, 19, state.speed * 0.681818, 160, "MPH", '#00ffcc');
         
+        // Gear Indicator Box
         ctx.fillStyle = '#151515'; ctx.fillRect(clusterLeft + 172, dashY - 28, 22, 18);
         ctx.fillStyle = state.shiftError ? '#ff0000' : '#00ff00'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
         ctx.fillText(state.gear !== 0 ? state.gear : (state.shiftError ? state.attemptedGear : "N"), clusterLeft + 183, dashY - 15);
 
-        // NOS Cockpit LED Light on dash
-        ctx.fillStyle = (state.nosArmed && state.nosEngaged) ? '#00e5ff' : (state.nosArmed ? '#ff3333' : '#112233');
-        ctx.fillRect(clusterLeft + 15, dashY - 28, 16, 10);
-        ctx.strokeStyle = '#333'; ctx.strokeRect(clusterLeft + 15, dashY - 28, 16, 10);
+        // NOS Cockpit Indicator Box (Relocated directly to the RIGHT of gear box at clusterLeft + 200)
+        let isNosActive = state.gas && state.nosArmed && state.nosEngaged;
+        ctx.fillStyle = isNosActive ? '#00e5ff' : (state.nosArmed ? '#ff3333' : '#112233');
+        ctx.fillRect(clusterLeft + 200, dashY - 28, 18, 18);
+        ctx.strokeStyle = '#333'; ctx.strokeRect(clusterLeft + 200, dashY - 28, 18, 18);
 
         let lightColor = (state.rpm >= REDLINE) ? '#ff0000' : '#220000';
         ctx.fillStyle = '#08080a'; ctx.fillRect(clusterLeft + clusterWidth - 8, dashY - 52, 22, 22); 
