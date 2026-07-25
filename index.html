@@ -17,7 +17,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #111;
+            background-color: #020208; /* Matches game sky so letterboxing bleeds seamlessly */
             font-family: 'Courier New', Courier, monospace;
             display: flex;
             align-items: center;
@@ -31,10 +31,10 @@
             height: 430px;
             background: #000;
             overflow: hidden;
-            border: 4px solid #333;
-            border-radius: 40px;
+            border: none;
+            border-radius: 0px;
             transform-origin: center center;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            box-shadow: none;
         }
 
         canvas {
@@ -44,7 +44,7 @@
             z-index: 1;
         }
 
-        /* Top HUD Layout - Integrated Version Box to guarantee visibility */
+        /* Top HUD Layout */
         #hud {
             position: absolute;
             top: 15px;
@@ -64,6 +64,26 @@
         }
         .hud-val { color: #0f0; }
         .hud-ver { color: #ffcc00; }
+
+        /* Reaction Readout Display Module centered perfectly underneath the Main HUD */
+        #reaction-box {
+            position: absolute;
+            top: 56px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(0,0,0,0.88);
+            padding: 5px 14px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            color: #fff;
+            font-weight: bold;
+            font-size: 11px;
+            display: none;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        #rt-val { font-size: 12px; }
 
         /* Top Button Styles */
         .top-btn {
@@ -177,7 +197,6 @@
             border-radius: 6px;
         }
         
-        /* Enforces full yellow active coloration across standard and neutral blank slots */
         .shifter-quadrant .shift-gate.active {
             background: #ffcc00 !important;
             color: #000 !important;
@@ -207,8 +226,10 @@
         <div>RPM: <span id="hud-rpm" class="hud-val">1000</span></div>
         <div>MPH: <span id="hud-mph" class="hud-val">0</span></div>
         <div>AI DIST: <span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div>VER: <span class="hud-ver">1.19</span></div>
+        <div>VER: <span class="hud-ver">1.23</span></div>
     </div>
+
+    <div id="reaction-box">REACTION TIME: <span id="rt-val">--</span></div>
 
     <div class="control-zone" id="left-controls">
         <div class="btn" id="btn-gas">GAS</div>
@@ -271,6 +292,7 @@
         clutchLeft: false,
         clutchRight: false,
         gas: false,
+        gasSource: 'keyboard', // Tracks 'keyboard' vs 'touch' input source for gas boost
         nosArmed: false,
         nosEngaged: false,
         treeTimer: 0,
@@ -279,7 +301,8 @@
         logMsg: "",
         shiftError: false,
         screechPlayed: false,
-        muted: true 
+        muted: true,
+        reactionTime: null
     };
 
     let shifterX = 1; 
@@ -474,7 +497,9 @@
         hudGear: document.getElementById('hud-gear'),
         hudRpm: document.getElementById('hud-rpm'),
         hudMph: document.getElementById('hud-mph'),
-        hudAiDist: document.getElementById('hud-aidist')
+        hudAiDist: document.getElementById('hud-aidist'),
+        reactionBox: document.getElementById('reaction-box'),
+        rtVal: document.getElementById('rt-val')
     };
 
     let audioUnlocked = false;
@@ -488,13 +513,14 @@
     document.addEventListener('touchstart', unlockAudio);
     document.addEventListener('click', unlockAudio);
 
-    function bindButton(element, onPress, onRelease) {
+    function bindButton(element, onPress, onRelease, isGasPedal = false) {
         element.addEventListener('touchstart', (e) => { 
             e.preventDefault(); 
             if (!AudioEngine.initialized && !AudioEngine.initializing) {
                 AudioEngine.init();
             }
             element.classList.add('active'); 
+            if (isGasPedal) state.gasSource = 'touch';
             onPress(); 
         }, { passive: false });
 
@@ -515,6 +541,7 @@
                 AudioEngine.init();
             }
             element.classList.add('active'); 
+            if (isGasPedal) state.gasSource = 'touch';
             onPress(); 
         });
 
@@ -531,9 +558,8 @@
         });
     }
 
-    bindButton(UI.gas, () => { state.gas = true; }, () => { state.gas = false; });
+    bindButton(UI.gas, () => { state.gas = true; }, () => { state.gas = false; }, true);
     
-    // Cross-linked parallel configuration unifies both mobile buttons to act symmetrically as one cohesive hardware pedal
     bindButton(UI.clutchL, 
         () => { state.clutchLeft = true; state.clutchRight = true; UI.clutchR.classList.add('active'); }, 
         () => { state.clutchLeft = false; state.clutchRight = false; UI.clutchR.classList.remove('active'); }
@@ -655,7 +681,7 @@
     window.addEventListener('mousemove', (e) => { if (isMouseShifting) processShiftAtCoords(e.clientX, e.clientY); });
     window.addEventListener('mouseup', () => { isMouseShifting = false; });
 
-    // Keyboard Input Processing with unified simulator function hooks
+    // Keyboard Input Processing
     window.addEventListener('keydown', (e) => {
         if (!AudioEngine.initialized && !AudioEngine.initializing) {
             AudioEngine.init();
@@ -664,7 +690,11 @@
             e.preventDefault(); 
         }
         switch (e.key.toLowerCase()) {
-            case 'x': state.gas = true; UI.gas.classList.add('active'); break;
+            case 'x': 
+                state.gas = true; 
+                state.gasSource = 'keyboard';
+                UI.gas.classList.add('active'); 
+                break;
             case 'c': state.clutchLeft = true; state.clutchRight = true; UI.clutchL.classList.add('active'); UI.clutchR.classList.add('active'); break;
             case 'a': state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); break;
             case 'n': if (state.nosArmed) { state.nosEngaged = true; UI.nosLaunch.classList.add('active'); } break;
@@ -707,6 +737,7 @@
         shifterX = 1; shifterY = 1; 
         state.shiftError = false;
         state.screechPlayed = false;
+        state.reactionTime = null;
         updateShifterVisuals();
         lastTime = performance.now(); 
     }
@@ -728,15 +759,16 @@
         return { x: x, y: y, scale: scale, visible: (diff > -55 && diff < 1200) };
     }
 
-    // --- HARMONIZED DUAL-VEHICLE PHYSICS ENGINE ---
+    // --- RECALIBRATED HARMONIZED PHYSICS ENGINE ---
     function updatePhysics(dt) {
         let clutchPressed = state.clutchLeft || state.clutchRight;
 
-        // Instant hardware intercept hooks an early clutch drop in gear to fire the staging foul instantly
+        // Early Launch hardware intercept checks
         if ((state.raceState === 'countdown' || state.raceState === 'staging') && !clutchPressed && state.gear !== 0) {
             state.raceState = 'foul'; 
             state.treeStep = 7; 
             state.logMsg = "FOUL! JUMPED THE TREE!";
+            state.reactionTime = -0.001;
             AudioEngine.playTone(220, 'sawtooth', 0.6, 0.45); 
         }
 
@@ -760,7 +792,7 @@
             }
         }
 
-        // CORRECTED DRIVETRAIN CONDITION: If shifter is in Neutral (0) OR the clutch is held down (clutchPressed), engine free-revs and car drifts
+        // ================= PLAYER VEHICLE MECHANICAL PATHWAY =================
         if (state.gear === 0 || clutchPressed) {
             if (state.gas) {
                 state.rpm += 18000 * dt; 
@@ -775,9 +807,21 @@
             if (state.speed < 0) state.speed = 0;
             state.distance += state.speed * dt;
         } else {
-            // Mechanical Locking: Clutch is fully engaged (finger off button) and transmission is in gear
+            // Clutch is cleanly engaged and gear is selected
             let ratioMult = GEAR_RATIOS[state.gear] * FINAL_DRIVE * VELOCITY_CONSTANT;
             let mechanicalRpm = IDLE_RPM + (state.speed * ratioMult);
+
+            if (state.raceState === 'racing' && state.reactionTime === null) {
+                let calculatedReaction = (performance.now() - state.startTime) / 1000;
+                state.reactionTime = calculatedReaction;
+                
+                if (calculatedReaction < 0.12) {
+                    state.raceState = 'foul';
+                    state.treeStep = 7;
+                    state.logMsg = `FOUL! TOO FAST FOR GLASS! RT: ${calculatedReaction.toFixed(3)}s`;
+                    AudioEngine.playTone(220, 'sawtooth', 0.6, 0.45);
+                }
+            }
 
             if (mechanicalRpm > MAX_RPM) {
                 let overRev = mechanicalRpm - MAX_RPM;
@@ -794,7 +838,6 @@
                     state.rpm = mechanicalRpm;
                 }
 
-                // Balanced Combustion Torque Profile Matrix
                 let torqueFactor = 0;
                 if (state.rpm < 2000) {
                     torqueFactor = 0.15 + ((state.rpm - IDLE_RPM) / 1000) * 0.25;
@@ -807,12 +850,17 @@
                     torqueFactor = 1.0 - (overPeakPct * overPeakPct * 0.35);
                 }
 
-                let nosBoost = state.nosEngaged ? 1.30 : 1.0; 
+                // DUAL-INPUT GAIN CALIBRATOR:
+                // Boosts power on touch controls to offset mobile touch sampling latency
+                const TOUCH_HP_SCALE = 1.35;
+                let touchMultiplier = (state.gasSource === 'touch') ? TOUCH_HP_SCALE : 1.0;
+
+                let nosBoost = state.nosEngaged ? 2.5 : 1.0; 
                 const MONSTER_HP_SCALE = 45.0; 
 
                 let engineForce = 0;
                 if (state.gas) {
-                    engineForce = torqueFactor * GEAR_RATIOS[state.gear] * nosBoost * MONSTER_HP_SCALE;
+                    engineForce = torqueFactor * GEAR_RATIOS[state.gear] * nosBoost * MONSTER_HP_SCALE * touchMultiplier;
                 }
 
                 if (state.speed === 0 && state.distance === 0 && state.raceState === 'racing' && !state.screechPlayed) {
@@ -833,37 +881,48 @@
             }
         }
 
-        // AI opponent processing loop
+        // ================= UNIFIED OMNIPRESENT AI VEHICLE PROCESSOR =================
+        let aiGear = 1;
+        if (state.time > 1.2) aiGear = 2;
+        if (state.time > 2.6) aiGear = 3;
+        if (state.time > 4.2) aiGear = 4;
+        if (state.time > 6.2) aiGear = 5;
+
         if (state.raceState === 'racing') {
             state.time = (performance.now() - state.startTime) / 1000;
             
-            let aiGear = 1;
-            if (state.time > 1.2) aiGear = 2;
-            if (state.time > 2.6) aiGear = 3;
-            if (state.time > 4.2) aiGear = 4;
-            if (state.time > 6.2) aiGear = 5;
-
-            let aiAcc = (39.5 / aiGear) - (state.aiSpeed * 0.065);
+            let aiAcc = (80.0 / aiGear) - (state.aiSpeed * 0.065);
+            
             if ((state.time > 1.15 && state.time < 1.25) || (state.time > 2.55 && state.time < 2.65) || 
                 (state.time > 4.15 && state.time < 4.25) || (state.time > 6.15 && state.time < 6.25)) {
                 aiAcc = -10; 
             }
             state.aiSpeed += aiAcc * dt;
-            if (state.aiSpeed < 0) state.aiSpeed = 0;
-            state.aiDistance += state.aiSpeed * dt;
+        } else if (state.raceState === 'finished' || state.raceState === 'foul') {
+            let aiAirDrag = state.aiSpeed * state.aiSpeed * 0.0005;
+            state.aiSpeed -= (aiAirDrag + 15.0) * dt;
+        } else {
+            state.aiSpeed = 0;
+        }
 
+        if (state.aiSpeed < 0) state.aiSpeed = 0;
+
+        if (state.raceState === 'racing' || state.raceState === 'finished' || state.raceState === 'foul') {
+            state.aiDistance += state.aiSpeed * dt;
+        }
+
+        // ================= TRAP LINE WIN EVALUATIONS =================
+        if (state.raceState === 'racing') {
             if (state.distance >= 1320 && !state.aiFinished) {
                 state.raceState = 'finished';
                 state.logMsg = `PLAYER WINS! ET: ${state.time.toFixed(3)}s @ ${(state.speed * 0.681818).toFixed(1)} MPH`;
                 AudioEngine.playTone(660, 'sine', 0.5, 0.3);
             } else if (state.aiDistance >= 1320 && state.distance < 1320) {
-                state.aiFinished = true;
+                state.aiFinished = true; 
                 state.raceState = 'finished';
                 state.logMsg = `AI WINS (84 FIREBIRD)! ET: ${state.time.toFixed(3)}s`;
                 AudioEngine.playTone(330, 'sine', 0.5, 0.3);
             }
-        } else if (state.raceState === 'finished' || state.raceState === 'foul') {
-            if (!state.aiFinished) state.aiDistance += state.aiSpeed * dt;
         }
 
         AudioEngine.update(state.rpm, state.speed, state.gas);
@@ -876,6 +935,19 @@
         UI.hudRpm.innerText = Math.floor(state.rpm);
         UI.hudMph.innerText = Math.floor(state.speed * 0.681818); 
         UI.hudAiDist.innerText = Math.floor(state.aiDistance) + " ft";
+
+        if (state.reactionTime !== null) {
+            UI.reactionBox.style.display = 'block';
+            if (state.reactionTime < 0) {
+                UI.rtVal.innerText = "JUMPED START";
+                UI.rtVal.style.color = '#ff3333';
+            } else {
+                UI.rtVal.innerText = state.reactionTime.toFixed(3) + "s";
+                UI.rtVal.style.color = state.reactionTime < 0.25 ? '#ff3333' : '#00ffcc';
+            }
+        } else {
+            UI.reactionBox.style.display = 'none';
+        }
     }
 
     function draw() {
@@ -888,9 +960,9 @@
         ctx.fillStyle = '#1b1b1b'; ctx.fillRect(0, horizon, canvas.width, canvas.height - horizon);
 
         let pFarLeft = getProjection(state.distance + 1000, -2.0);   
-        let pCloseLeft = getProjection(state.distance, -2.0);         
+        let pCloseLeft = getProjection(state.distance, -2.0);        
         let pFarRight = getProjection(state.distance + 1000, 2.0);   
-        let pCloseRight = getProjection(state.distance, 2.0);         
+        let pCloseRight = getProjection(state.distance, 2.0);        
 
         ctx.fillStyle = '#0f0f14';
         ctx.beginPath();
@@ -1003,8 +1075,8 @@
                 ctx.shadowBlur = 0; 
             }
         }
-        drawLight(0, -6, '#fff', state.treeStep >= 1); drawLight(0, 6, '#fff', state.treeStep >= 1);  
-        drawLight(1, -6, '#fff', state.treeStep >= 2); drawLight(1, 6, '#fff', state.treeStep >= 2);  
+        drawLight(0, -6, '#fff', state.treeStep >= 1); drawLight(0, 6, '#fff', state.treeStep >= 1);   
+        drawLight(1, -6, '#fff', state.treeStep >= 2); drawLight(1, 6, '#fff', state.treeStep >= 2);   
         drawLight(2, -6, '#ffaa00', state.treeStep >= 3); drawLight(2, 6, '#ffaa00', state.treeStep >= 3);
         drawLight(3, -6, '#ffaa00', state.treeStep >= 4); drawLight(3, 6, '#ffaa00', state.treeStep >= 4);
         drawLight(4, -6, '#ffaa00', state.treeStep >= 5); drawLight(4, 6, '#ffaa00', state.treeStep >= 5);
@@ -1114,7 +1186,7 @@
         ctx.fillStyle = '#1c1e22'; ctx.beginPath(); ctx.arc(wheelX, wheelY, 15, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#111'; ctx.stroke();
     }
 
-    // --- LEAK-FREE UNIFIED MAIN GAME LOOP ENGINE ---
+    // --- MAIN GAME LOOP ENGINE ---
     function unifiedGameLoop() {
         let now = performance.now();
         let dt = (now - lastTime) / 1000;
