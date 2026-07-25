@@ -289,7 +289,7 @@
         <div class="hud-col"><span class="hud-title">RPM</span><span id="hud-rpm" class="hud-val">1000</span></div>
         <div class="hud-col"><span class="hud-title">MPH</span><span id="hud-mph" class="hud-val">0</span></div>
         <div class="hud-col"><span class="hud-title">AI DIST</span><span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.4</span></div>
+        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.5</span></div>
     </div>
 
     <div id="player-et-box">MUSTANG ET: <span id="player-et-val" class="hud-val">--</span></div>
@@ -384,7 +384,7 @@
     const FINAL_DRIVE = 4.10;
     const VELOCITY_CONSTANT = 6.989; 
 
-    // --- SYNTHESIZED MEDIASTREAM AUDIO ENGINE (SINGLE-ROUTE MEDIA STREAM - NO ECHO / NO LOCK-SCREEN CONTROL GLITCH) ---
+    // --- RESTORED ORIGINAL WORKING MEDIASTREAM AUDIO ENGINE ARCHITECTURE ---
     const AudioEngine = {
         ctx: null,
         masterGain: null,
@@ -403,26 +403,32 @@
 
         async init() {
             if (this.initialized) {
-                await this.ensureResumed();
+                if (this.ctx && this.ctx.state === 'suspended') await this.ctx.resume();
+                if (this.playbackEl && !state.muted) this.playbackEl.play().catch(() => {});
                 return;
             }
             if (this.initializing) return; 
             this.initializing = true;
 
             try {
+                if (navigator.audioSession) {
+                    navigator.audioSession.type = "playback";
+                }
+
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 this.masterGain = this.ctx.createGain();
 
-                // MEDIASTREAM DESTINATION ONLY (Prevents dual-routing echo)
+                // 1. MEDIASTREAM DESTINATION
                 this.streamDest = this.ctx.createMediaStreamDestination();
                 this.masterGain.connect(this.streamDest);
 
+                // 2. HTML AUDIO ELEMENT
                 this.playbackEl = new Audio();
                 this.playbackEl.srcObject = this.streamDest.stream;
 
                 this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
 
-                // Car Powertrain Oscillators
+                // Engine Powertrain Oscillators
                 this.engineOsc1 = this.ctx.createOscillator();
                 this.engineOsc2 = this.ctx.createOscillator();
                 this.engineGain = this.ctx.createGain();
@@ -483,7 +489,10 @@
 
                 this.initialized = true;
 
-                await this.ensureResumed();
+                // 3. FORCE ELEMENT PLAY ON INIT
+                if (!state.muted && this.playbackEl) {
+                    await this.playbackEl.play().catch(() => {});
+                }
             } catch (e) {
                 console.error("Audio engine setup failed:", e);
             } finally {
@@ -491,22 +500,11 @@
             }
         },
 
-        async ensureResumed() {
-            if (this.ctx && this.ctx.state === 'suspended') {
-                await this.ctx.resume();
-            }
-            if (this.playbackEl && !state.muted && this.playbackEl.paused) {
-                await this.playbackEl.play().catch(() => {});
-            }
-        },
-
-        async setMute(isMuted) {
-            if (!this.initialized) await this.init();
-            await this.ensureResumed();
-
+        // 4. UNMUTE & SETMUTE LOGIC
+        setMute(isMuted) {
+            if (!this.initialized) return;
             const vol = isMuted ? 0 : 1;
             this.masterGain.gain.setValueAtTime(vol, this.ctx.currentTime);
-            
             if (!isMuted && this.playbackEl) {
                 this.playbackEl.play().catch(() => {});
             }
@@ -536,11 +534,8 @@
         },
 
         // High-RPM Gear Shift Tire Bark
-        async playTireChirp() {
-            if (state.muted) return;
-            if (!this.initialized) await this.init();
-            await this.ensureResumed();
-
+        playTireChirp() {
+            if (!this.initialized || state.muted) return;
             let osc = this.ctx.createOscillator();
             let gain = this.ctx.createGain();
             let filter = this.ctx.createBiquadFilter();
@@ -565,11 +560,8 @@
         },
 
         // Hard Launch Tire Screech Sweep
-        async playScreech() {
-            if (state.muted) return;
-            if (!this.initialized) await this.init();
-            await this.ensureResumed();
-
+        playScreech() {
+            if (!this.initialized || state.muted) return;
             let osc = this.ctx.createOscillator();
             let gain = this.ctx.createGain();
             osc.type = 'sawtooth';
@@ -590,11 +582,8 @@
             osc.stop(this.ctx.currentTime + 0.4);
         },
 
-        async playTone(freq, type, duration, volume) {
-            if (state.muted) return;
-            if (!this.initialized) await this.init();
-            await this.ensureResumed();
-
+        playTone(freq, type, duration, volume) {
+            if (!this.initialized || state.muted) return;
             let osc = this.ctx.createOscillator();
             let gain = this.ctx.createGain();
             osc.type = type;
@@ -607,12 +596,10 @@
             osc.stop(this.ctx.currentTime + duration);
         },
 
-        async playGrind() {
-            if (state.muted) return;
-            if (!this.initialized) await this.init();
-            await this.ensureResumed();
-            await this.playTone(140, 'sawtooth', 0.22, 0.35);
-            await this.playTone(145, 'triangle', 0.22, 0.35);
+        playGrind() {
+            if (!this.initialized || state.muted) return;
+            this.playTone(140, 'sawtooth', 0.22, 0.35);
+            this.playTone(145, 'triangle', 0.22, 0.35);
         }
     };
 
@@ -640,22 +627,26 @@
         rtVal: document.getElementById('rt-val')
     };
 
-    // Global User Interaction Audio Unlock
-    async function globalUnlockAudio() {
-        if (!AudioEngine.initialized) {
-            await AudioEngine.init();
-        } else {
-            await AudioEngine.ensureResumed();
-        }
+    let audioUnlocked = false;
+    async function unlockAudio() {
+        if (audioUnlocked) return;
+        audioUnlocked = true;
+        await AudioEngine.init();
+        document.removeEventListener('touchstart', unlockAudio);
+        document.removeEventListener('click', unlockAudio);
     }
-    window.addEventListener('touchstart', globalUnlockAudio, { passive: true });
-    window.addEventListener('mousedown', globalUnlockAudio);
-    window.addEventListener('keydown', globalUnlockAudio);
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('click', unlockAudio);
 
     function bindButton(element, onPress, onRelease, isGasPedal = false) {
-        element.addEventListener('touchstart', async (e) => { 
+        element.addEventListener('touchstart', (e) => { 
             e.preventDefault(); 
-            await globalUnlockAudio();
+            if (!AudioEngine.initialized && !AudioEngine.initializing) {
+                AudioEngine.init();
+            } else if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') {
+                AudioEngine.ctx.resume();
+                if (AudioEngine.playbackEl && !state.muted) AudioEngine.playbackEl.play().catch(() => {});
+            }
             element.classList.add('active'); 
             if (isGasPedal) state.gasSource = 'touch';
             onPress(); 
@@ -673,8 +664,13 @@
             onRelease(); 
         }, { passive: false });
 
-        element.addEventListener('mousedown', async () => { 
-            await globalUnlockAudio();
+        element.addEventListener('mousedown', () => { 
+            if (!AudioEngine.initialized && !AudioEngine.initializing) {
+                AudioEngine.init();
+            } else if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') {
+                AudioEngine.ctx.resume();
+                if (AudioEngine.playbackEl && !state.muted) AudioEngine.playbackEl.play().catch(() => {});
+            }
             element.classList.add('active'); 
             if (isGasPedal) state.gasSource = 'touch';
             onPress(); 
@@ -707,23 +703,23 @@
     
     bindButton(UI.nosLaunch, () => { state.nosEngaged = true; }, () => { state.nosEngaged = false; });
     
-    UI.nosArm.addEventListener('click', async (e) => { 
+    UI.nosArm.addEventListener('click', (e) => { 
         e.preventDefault(); 
-        await globalUnlockAudio();
+        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
         state.nosArmed = !state.nosArmed; 
         UI.nosArm.classList.toggle('armed', state.nosArmed); 
     });
 
-    UI.pov.addEventListener('click', async (e) => { 
+    UI.pov.addEventListener('click', (e) => { 
         e.preventDefault(); 
-        await globalUnlockAudio();
+        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
         state.pov = state.pov === 'outside' ? 'inside' : 'outside'; 
         UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; 
     });
 
-    UI.stage.addEventListener('click', async (e) => { 
+    UI.stage.addEventListener('click', (e) => { 
         e.preventDefault(); 
-        await globalUnlockAudio();
+        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
         resetRace(); 
         state.raceState = 'staging'; 
         state.treeTimer = 0; 
@@ -733,14 +729,15 @@
     UI.sound.addEventListener('click', async (e) => {
         e.preventDefault();
         state.muted = !state.muted;
-        await AudioEngine.setMute(state.muted);
+        await AudioEngine.init();
+        AudioEngine.setMute(state.muted);
 
         UI.sound.innerText = state.muted ? "🔇 SOUND: OFF" : "🔊 SOUND: ON";
         UI.sound.style.borderColor = state.muted ? "rgba(255, 51, 51, 0.8)" : "#00ffcc";
         UI.sound.style.color = state.muted ? "#ff3333" : "#00ffcc";
     });
 
-    // --- MECHANICAL SHIFTER ENGINE WITH HIGH-RPM TIRE CHIRP ---
+    // --- MECHANICAL SHIFTER ENGINE WITH TIRE CHIRP TRIGGER ---
     function attemptMoveShifter(tx, ty) {
         let currentY = shifterY;
         let clutchPressed = state.clutchLeft || state.clutchRight;
@@ -829,8 +826,8 @@
     }, { passive: true });
 
     let isMouseShifting = false;
-    UI.quadrant.addEventListener('mousedown', async (e) => { 
-        await globalUnlockAudio();
+    UI.quadrant.addEventListener('mousedown', (e) => { 
+        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
         isMouseShifting = true; 
         processShiftAtCoords(e.clientX, e.clientY); 
     });
@@ -838,8 +835,8 @@
     window.addEventListener('mouseup', () => { isMouseShifting = false; });
 
     // Keyboard Input Processing
-    window.addEventListener('keydown', async (e) => {
-        await globalUnlockAudio();
+    window.addEventListener('keydown', (e) => {
+        if (!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init();
         if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) e.preventDefault(); 
         
         switch (e.key.toLowerCase()) {
