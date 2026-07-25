@@ -852,7 +852,7 @@
 
                 // DUAL-INPUT GAIN CALIBRATOR:
                 // Boosts power on touch controls to offset mobile touch sampling latency
-                const TOUCH_HP_SCALE = 1.35;
+                const TOUCH_HP_SCALE = 1.45;
                 let touchMultiplier = (state.gasSource === 'touch') ? TOUCH_HP_SCALE : 1.0;
 
                 let nosBoost = state.nosEngaged ? 2.5 : 1.0; 
