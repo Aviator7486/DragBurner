@@ -44,7 +44,7 @@
             z-index: 1;
         }
 
-        /* Top HUD Layout - Vertical Title/Value Stacking */
+        /* Top HUD Layout - Translucent Glassmorphism */
         #hud {
             position: absolute;
             top: 12px;
@@ -53,14 +53,15 @@
             z-index: 10;
             display: flex;
             gap: 18px;
-            background: rgba(0,0,0,0.85);
+            background: rgba(5, 5, 10, 0.65);
             padding: 6px 16px;
             border-radius: 10px;
-            border: 1px solid #444;
+            border: 1px solid rgba(85, 85, 85, 0.6);
             color: #fff;
             pointer-events: none;
             font-weight: bold;
             font-size: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         .hud-col {
             display: flex;
@@ -73,25 +74,25 @@
             color: #aaa;
             margin-bottom: 2px;
         }
-        .hud-val { color: #0f0; font-size: 13px; }
+        .hud-val { color: #00ffcc; font-size: 13px; }
         .hud-ver { color: #ffcc00; font-size: 13px; }
 
-        /* Telemetry Readout Containers */
+        /* Telemetry Readout Containers - Translucent Glass Style */
         #player-et-box {
             position: absolute;
             top: 65px;
             left: 175px;
             z-index: 10;
-            background: rgba(0,0,0,0.88);
+            background: rgba(0, 0, 5, 0.82);
             padding: 5px 12px;
             border-radius: 6px;
-            border: 1px solid #555;
-            color: #fff;
+            border: 1px solid rgba(255, 204, 0, 0.8);
+            color: #ffcc00;
             font-weight: bold;
             font-size: 11px;
             display: none;
             letter-spacing: 0.5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.25);
             text-align: center;
         }
 
@@ -101,16 +102,16 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
-            background: rgba(0,0,0,0.88);
+            background: rgba(0, 0, 5, 0.82);
             padding: 5px 14px;
             border-radius: 6px;
-            border: 1px solid #555;
-            color: #fff;
+            border: 1px solid rgba(255, 204, 0, 0.8);
+            color: #ffcc00;
             font-weight: bold;
             font-size: 11px;
             display: none;
             letter-spacing: 0.5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.25);
             text-align: center;
         }
 
@@ -119,29 +120,29 @@
             top: 65px;
             right: 175px;
             z-index: 10;
-            background: rgba(0,0,0,0.88);
+            background: rgba(0, 0, 5, 0.82);
             padding: 5px 12px;
             border-radius: 6px;
-            border: 1px solid #555;
-            color: #fff;
+            border: 1px solid rgba(255, 204, 0, 0.8);
+            color: #ffcc00;
             font-weight: bold;
             font-size: 11px;
             display: none;
             letter-spacing: 0.5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.25);
             text-align: center;
         }
 
         #rt-val { font-size: 12px; }
 
-        /* Top Button Styles */
+        /* Translucent Top Button Styles */
         .top-btn {
             position: absolute;
             z-index: 11;
             padding: 8px 12px;
-            background: #222;
+            background: rgba(34, 34, 34, 0.65);
             color: #fff;
-            border: 2px solid #555;
+            border: 2px solid rgba(85, 85, 85, 0.8);
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
@@ -151,6 +152,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+            opacity: 0.85;
+        }
+        .top-btn:hover {
+            background: rgba(51, 51, 51, 0.9);
+            border-color: #00ffcc;
+            color: #00ffcc;
+            opacity: 1.0;
         }
         #pov-toggle {
             top: 15px;
@@ -159,15 +168,19 @@
         #sound-toggle {
             top: 54px;
             left: 20px;
-            border-color: #ff3333;
+            border-color: rgba(255, 51, 51, 0.8);
             color: #ff3333;
         }
         #stage-btn {
             top: 15px;
             right: 20px;
-            background: #d4a373;
+            background: rgba(212, 163, 115, 0.75);
             color: #000;
             border: 2px solid #fff;
+        }
+        #stage-btn:hover {
+            background: rgba(226, 180, 140, 0.95);
+            color: #000;
         }
 
         /* Control Zones */
@@ -178,7 +191,10 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            opacity: 0.82;
+            transition: opacity 0.2s;
         }
+        .control-zone:hover { opacity: 0.98; }
         
         #left-controls {
             left: 30px;
@@ -192,8 +208,8 @@
         }
 
         .btn {
-            background: linear-gradient(135deg, #333, #111);
-            border: 3px solid #555;
+            background: linear-gradient(135deg, rgba(51,51,51,0.7), rgba(17,17,17,0.7));
+            border: 3px solid rgba(85,85,85,0.8);
             color: #fff;
             border-radius: 12px;
             display: flex;
@@ -203,14 +219,14 @@
             box-shadow: inset 0 2px 5px rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.6);
         }
         .btn:active, .btn.active {
-            background: linear-gradient(135deg, #111, #000);
+            background: linear-gradient(135deg, rgba(17,17,17,0.85), rgba(0,0,0,0.85));
             border-color: #888;
             box-shadow: inset 0 3px 5px rgba(0,0,0,0.8);
         }
 
-        #btn-gas { height: 110px; background: linear-gradient(135deg, #228b22, #004d00); border-color: #00ff00; font-size: 20px; }
-        #btn-clutch-l { height: 99px; background: linear-gradient(135deg, #444, #222); border-color: #777; font-size: 16px; } 
-        #btn-clutch-r { height: 45px; background: linear-gradient(135deg, #444, #222); border-color: #777; font-size: 14px; width: 100%; } 
+        #btn-gas { height: 110px; background: linear-gradient(135deg, rgba(34,139,34,0.75), rgba(0,77,0,0.75)); border-color: rgba(0,255,0,0.8); font-size: 20px; }
+        #btn-clutch-l { height: 99px; background: linear-gradient(135deg, rgba(68,68,68,0.7), rgba(34,34,34,0.7)); border-color: rgba(119,119,119,0.8); font-size: 16px; } 
+        #btn-clutch-r { height: 45px; background: linear-gradient(135deg, rgba(68,68,68,0.7), rgba(34,34,34,0.7)); border-color: rgba(119,119,119,0.8); font-size: 14px; width: 100%; } 
 
         .nos-row {
             display: flex;
@@ -218,10 +234,10 @@
             height: 45px; 
             width: 100%;
         }
-        #btn-nos-arm { flex: 1; background: linear-gradient(135deg, #8b0000, #4d0000); border-color: #ff0000; font-size: 10px; }
-        #btn-nos-arm.armed { background: #ff3333; border-color: #fff; color: #000; animation: pulse 0.5s infinite alternate; }
-        #btn-nos-launch { flex: 1; background: linear-gradient(135deg, #00008b, #00004d); border-color: #0000ff; font-size: 10px; }
-        #btn-nos-launch.active { background: #3333ff; border-color: #fff; }
+        #btn-nos-arm { flex: 1; background: linear-gradient(135deg, rgba(139,0,0,0.75), rgba(77,0,0,0.75)); border-color: rgba(255,0,0,0.8); font-size: 10px; }
+        #btn-nos-arm.armed { background: rgba(255, 51, 51, 0.9); border-color: #fff; color: #000; animation: pulse 0.5s infinite alternate; }
+        #btn-nos-launch { flex: 1; background: linear-gradient(135deg, rgba(0,0,139,0.75), rgba(0,0,77,0.75)); border-color: rgba(0,0,255,0.8); font-size: 10px; }
+        #btn-nos-launch.active { background: rgba(51, 51, 255, 0.95); border-color: #fff; }
 
         .shifter-quadrant {
             display: grid;
@@ -229,14 +245,14 @@
             grid-template-rows: repeat(3, 1fr);
             gap: 6px;
             height: 198px; 
-            background: #1a1a1a;
+            background: rgba(26, 26, 26, 0.65);
             padding: 6px;
             border-radius: 14px;
-            border: 3px solid #444;
+            border: 3px solid rgba(68, 68, 68, 0.8);
         }
         .shift-gate {
-            background: #0a0a0a;
-            border: 2px solid #252525;
+            background: rgba(10, 10, 10, 0.65);
+            border: 2px solid rgba(37, 37, 37, 0.8);
             color: #888;
             font-size: 21px; 
             font-weight: bold;
@@ -274,7 +290,7 @@
         <div class="hud-col"><span class="hud-title">RPM</span><span id="hud-rpm" class="hud-val">1000</span></div>
         <div class="hud-col"><span class="hud-title">MPH</span><span id="hud-mph" class="hud-val">0</span></div>
         <div class="hud-col"><span class="hud-title">AI DIST</span><span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">1.9</span></div>
+        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.0</span></div>
     </div>
 
     <div id="player-et-box">MUSTANG ET: <span id="player-et-val" class="hud-val">--</span></div>
@@ -353,7 +369,6 @@
         startTime: 0,
         logMsg: "",
         shiftError: false,
-        screechPlayed: false,
         muted: true,
         reactionTime: null
     };
@@ -369,48 +384,36 @@
     const FINAL_DRIVE = 4.10;
     const VELOCITY_CONSTANT = 6.989; 
 
-    const SILENT_WAV_B64 = "UklGRiQAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-    let silentAudio = null;
-
-    // --- SYNTHESIZED MEDIASTREAM AUDIO ENGINE ---
+    // --- SYNTHESIZED AUDIO ENGINE (U-2 PROCEDURAL TIRE SCREECH & SHIFT CHIRP) ---
     const AudioEngine = {
         ctx: null,
         masterGain: null,
-        streamDest: null,
-        playbackEl: null,
         engineOsc1: null,
         engineOsc2: null,
         engineGain: null,
         windNoiseNode: null,
         windGainNode: null,
+        squealOsc: null,
+        squealGain: null,
+        squealFilter: null,
         initialized: false,
         initializing: false,
 
         async init() {
             if (this.initialized) {
                 if (this.ctx && this.ctx.state === 'suspended') await this.ctx.resume();
-                if (this.playbackEl && !state.muted) this.playbackEl.play().catch(() => {});
                 return;
             }
             if (this.initializing) return; 
             this.initializing = true;
 
             try {
-                if (navigator.audioSession) {
-                    navigator.audioSession.type = "playback";
-                }
-
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 this.masterGain = this.ctx.createGain();
-                
-                this.streamDest = this.ctx.createMediaStreamDestination();
-                this.masterGain.connect(this.streamDest);
-                
-                this.playbackEl = new Audio();
-                this.playbackEl.srcObject = this.streamDest.stream;
-                
+                this.masterGain.connect(this.ctx.destination);
                 this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
 
+                // Car Powertrain Oscillators
                 this.engineOsc1 = this.ctx.createOscillator();
                 this.engineOsc2 = this.ctx.createOscillator();
                 this.engineGain = this.ctx.createGain();
@@ -430,6 +433,7 @@
                 this.engineOsc1.start(0);
                 this.engineOsc2.start(0);
 
+                // Wind Noise Generator
                 let bufferSize = 2 * this.ctx.sampleRate;
                 let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 let output = noiseBuffer.getChannelData(0);
@@ -450,13 +454,27 @@
                 this.windGainNode.connect(this.masterGain);
                 this.windNoiseNode.start(0);
 
-                this.initialized = true;
+                // --- U-2 INTERCEPT PROCEDURAL CONTINUOUS TIRE SQUEAL ENGINE ---
+                this.squealOsc = this.ctx.createOscillator();
+                this.squealOsc.type = 'sawtooth';
+                this.squealOsc.frequency.setValueAtTime(1850, this.ctx.currentTime);
 
-                if (!state.muted) {
-                    await this.playbackEl.play().catch(() => {});
-                }
+                this.squealFilter = this.ctx.createBiquadFilter();
+                this.squealFilter.type = 'bandpass';
+                this.squealFilter.frequency.setValueAtTime(2100, this.ctx.currentTime);
+                this.squealFilter.Q.setValueAtTime(4.5, this.ctx.currentTime);
+
+                this.squealGain = this.ctx.createGain();
+                this.squealGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+
+                this.squealOsc.connect(this.squealFilter);
+                this.squealFilter.connect(this.squealGain);
+                this.squealGain.connect(this.masterGain);
+                this.squealOsc.start(0);
+
+                this.initialized = true;
             } catch (e) {
-                console.error("Audio engine context creation failed:", e);
+                console.error("Audio engine setup failed:", e);
             } finally {
                 this.initializing = false;
             }
@@ -464,14 +482,10 @@
 
         setMute(isMuted) {
             if (!this.initialized) return;
-            const vol = isMuted ? 0 : 1;
-            this.masterGain.gain.setValueAtTime(vol, this.ctx.currentTime);
-            if (!isMuted && this.playbackEl) {
-                this.playbackEl.play().catch(() => {});
-            }
+            this.masterGain.gain.setValueAtTime(isMuted ? 0 : 1, this.ctx.currentTime);
         },
 
-        update(rpm, speed, gas) {
+        update(rpm, speed, gas, isSpinning) {
             if (!this.initialized) return;
             let baseFreq = 22 + (rpm / 24);
             this.engineOsc1.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
@@ -483,10 +497,46 @@
 
             let mph = speed * 0.681818;
             this.windGainNode.gain.setValueAtTime(Math.min(mph / 320, 0.25), this.ctx.currentTime);
+
+            // Continuous Launch Squeal Modulation
+            if (isSpinning && !state.muted) {
+                let targetGain = Math.min(0.28, 0.12 + (rpm / 7500) * 0.18);
+                this.squealGain.gain.setValueAtTime(targetGain, this.ctx.currentTime);
+                let sqPitch = 1750 + (speed * 8.0) + (Math.random() * 80);
+                this.squealOsc.frequency.setValueAtTime(sqPitch, this.ctx.currentTime);
+            } else {
+                this.squealGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+            }
+        },
+
+        // --- U-2 SHIFT TIRE CHIRP SYNTHESIZER ---
+        playTireChirp() {
+            if (!this.initialized || state.muted) return;
+            let osc = this.ctx.createOscillator();
+            let gain = this.ctx.createGain();
+            let filter = this.ctx.createBiquadFilter();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(2400, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1300, this.ctx.currentTime + 0.16);
+
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(2200, this.ctx.currentTime);
+            filter.Q.setValueAtTime(4.0, this.ctx.currentTime);
+
+            gain.gain.setValueAtTime(0.38, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.16);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.masterGain);
+
+            osc.start(0);
+            osc.stop(this.ctx.currentTime + 0.16);
         },
 
         playTone(freq, type, duration, volume) {
-            if (!this.initialized) return;
+            if (!this.initialized || state.muted) return;
             let osc = this.ctx.createOscillator();
             let gain = this.ctx.createGain();
             osc.type = type;
@@ -499,40 +549,12 @@
             osc.stop(this.ctx.currentTime + duration);
         },
 
-        playScreech() {
-            if (!this.initialized) return;
-            let osc = this.ctx.createOscillator();
-            let gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(880, this.ctx.currentTime);
-            osc.frequency.linearRampToValueAtTime(1200, this.ctx.currentTime + 0.25);
-            
-            let filter = this.ctx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.setValueAtTime(1500, this.ctx.currentTime);
-
-            gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
-
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(this.masterGain);
-            osc.start(0);
-            osc.stop(this.ctx.currentTime + 0.4);
-        },
-
         playGrind() {
-            if (!this.initialized) return;
+            if (!this.initialized || state.muted) return;
             this.playTone(140, 'sawtooth', 0.22, 0.35);
             this.playTone(145, 'triangle', 0.22, 0.35);
         }
     };
-
-    function createSilentAudio() {
-        if (silentAudio) return;
-        silentAudio = new Audio("data:audio/wav;base64," + SILENT_WAV_B64);
-        silentAudio.loop = true;
-    }
 
     const UI = {
         gas: document.getElementById('btn-gas'),
@@ -572,9 +594,7 @@
     function bindButton(element, onPress, onRelease, isGasPedal = false) {
         element.addEventListener('touchstart', (e) => { 
             e.preventDefault(); 
-            if (!AudioEngine.initialized && !AudioEngine.initializing) {
-                AudioEngine.init();
-            }
+            if (!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init();
             element.classList.add('active'); 
             if (isGasPedal) state.gasSource = 'touch';
             onPress(); 
@@ -593,9 +613,7 @@
         }, { passive: false });
 
         element.addEventListener('mousedown', () => { 
-            if (!AudioEngine.initialized && !AudioEngine.initializing) {
-                AudioEngine.init();
-            }
+            if (!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init();
             element.classList.add('active'); 
             if (isGasPedal) state.gasSource = 'touch';
             onPress(); 
@@ -614,6 +632,7 @@
         });
     }
 
+    // ALWAYS-ACTIVE CONTROL BINDINGS
     bindButton(UI.gas, () => { state.gas = true; }, () => { state.gas = false; }, true);
     
     bindButton(UI.clutchL, 
@@ -625,11 +644,33 @@
         () => { state.clutchLeft = false; state.clutchRight = false; UI.clutchL.classList.remove('active'); }
     );
     
-    bindButton(UI.nosLaunch, () => { if(state.nosArmed) state.nosEngaged = true; }, () => { state.nosEngaged = false; });
+    // Nitrous Engage works at any time when pressed
+    bindButton(UI.nosLaunch, () => { state.nosEngaged = true; }, () => { state.nosEngaged = false; });
     
-    UI.nosArm.addEventListener('click', (e) => { e.preventDefault(); if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); });
-    UI.pov.addEventListener('click', (e) => { e.preventDefault(); if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); state.pov = state.pov === 'outside' ? 'inside' : 'outside'; UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; });
-    UI.stage.addEventListener('click', (e) => { e.preventDefault(); if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); resetRace(); state.raceState = 'staging'; state.treeTimer = 0; state.treeStep = 1; });
+    // Nitrous Arm Toggles at any time
+    UI.nosArm.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
+        state.nosArmed = !state.nosArmed; 
+        UI.nosArm.classList.toggle('armed', state.nosArmed); 
+    });
+
+    UI.pov.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
+        state.pov = state.pov === 'outside' ? 'inside' : 'outside'; 
+        UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; 
+    });
+
+    // Stage Car button works at any time to stage/reset
+    UI.stage.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
+        resetRace(); 
+        state.raceState = 'staging'; 
+        state.treeTimer = 0; 
+        state.treeStep = 1; 
+    });
 
     UI.sound.addEventListener('click', async (e) => {
         e.preventDefault();
@@ -638,11 +679,11 @@
         AudioEngine.setMute(state.muted);
 
         UI.sound.innerText = state.muted ? "🔇 SOUND: OFF" : "🔊 SOUND: ON";
-        UI.sound.style.borderColor = state.muted ? "#ff3333" : "#00ffcc";
+        UI.sound.style.borderColor = state.muted ? "rgba(255, 51, 51, 0.8)" : "#00ffcc";
         UI.sound.style.color = state.muted ? "#ff3333" : "#00ffcc";
     });
 
-    // --- MECHANICAL SHIFTER SIMULATOR ENGINE ---
+    // --- MECHANICAL SHIFTER ENGINE WITH TIRE CHIRP TRIGGER ---
     function attemptMoveShifter(tx, ty) {
         let currentY = shifterY;
         let clutchPressed = state.clutchLeft || state.clutchRight;
@@ -664,8 +705,17 @@
                 shifterY = ty;
                 state.shiftError = false;
                 if (state.gear !== targetGear) {
+                    let oldRpm = state.rpm;
                     state.gear = targetGear;
-                    if (state.gear !== 0) AudioEngine.playTone(580, 'sine', 0.04, 0.25);
+                    
+                    if (state.gear !== 0) {
+                        // High-RPM shift chirp trigger
+                        if (oldRpm > 3800 && state.gas) {
+                            AudioEngine.playTireChirp();
+                        } else {
+                            AudioEngine.playTone(580, 'sine', 0.04, 0.25);
+                        }
+                    }
                 }
             } else {
                 shifterX = tx;
@@ -677,16 +727,10 @@
             }
         } 
         else if ((currentY === 0 || currentY === 2) && ty === 1) {
-            shifterX = tx;
-            shifterY = 1;
-            state.gear = 0;
-            state.shiftError = false;
+            shifterX = tx; shifterY = 1; state.gear = 0; state.shiftError = false;
         } 
         else if (currentY === 1 && ty === 1) {
-            shifterX = tx;
-            shifterY = 1;
-            state.gear = 0;
-            state.shiftError = false;
+            shifterX = tx; shifterY = 1; state.gear = 0; state.shiftError = false;
         }
         updateShifterVisuals();
     }
@@ -739,12 +783,9 @@
 
     // Keyboard Input Processing
     window.addEventListener('keydown', (e) => {
-        if (!AudioEngine.initialized && !AudioEngine.initializing) {
-            AudioEngine.init();
-        }
-        if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) {
-            e.preventDefault(); 
-        }
+        if (!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init();
+        if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) e.preventDefault(); 
+        
         switch (e.key.toLowerCase()) {
             case 'x': 
                 state.gas = true; 
@@ -753,19 +794,11 @@
                 break;
             case 'c': state.clutchLeft = true; state.clutchRight = true; UI.clutchL.classList.add('active'); UI.clutchR.classList.add('active'); break;
             case 'a': state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); break;
-            case 'n': if (state.nosArmed) { state.nosEngaged = true; UI.nosLaunch.classList.add('active'); } break;
-            case 'arrowup':
-                if (shifterY > 0) attemptMoveShifter(shifterX, shifterY - 1);
-                break;
-            case 'arrowdown':
-                if (shifterY < 2) attemptMoveShifter(shifterX, shifterY + 1);
-                break;
-            case 'arrowleft':
-                if (shifterY === 1 && shifterX > 0) attemptMoveShifter(shifterX - 1, shifterY);
-                break;
-            case 'arrowright':
-                if (shifterY === 1 && shifterX < 2) attemptMoveShifter(shifterX + 1, shifterY);
-                break;
+            case 'n': state.nosEngaged = true; UI.nosLaunch.classList.add('active'); break;
+            case 'arrowup': if (shifterY > 0) attemptMoveShifter(shifterX, shifterY - 1); break;
+            case 'arrowdown': if (shifterY < 2) attemptMoveShifter(shifterX, shifterY + 1); break;
+            case 'arrowleft': if (shifterY === 1 && shifterX > 0) attemptMoveShifter(shifterX - 1, shifterY); break;
+            case 'arrowright': if (shifterY === 1 && shifterX < 2) attemptMoveShifter(shifterX + 1, shifterY); break;
         }
     });
 
@@ -794,7 +827,6 @@
         state.raceState = 'idle'; state.logMsg = ""; 
         shifterX = 1; shifterY = 1; 
         state.shiftError = false;
-        state.screechPlayed = false;
         state.reactionTime = null;
         updateShifterVisuals();
         lastTime = performance.now(); 
@@ -817,11 +849,11 @@
         return { x: x, y: y, scale: scale, visible: (diff > -55 && diff < 1200) };
     }
 
-    // --- RECALIBRATED HARMONIZED PHYSICS ENGINE ---
+    // --- REAL-TIME PHYSICS ENGINE ---
     function updatePhysics(dt) {
         let clutchPressed = state.clutchLeft || state.clutchRight;
 
-        // Early Launch hardware intercept checks
+        // Early Launch checking during countdown matrix
         if ((state.raceState === 'countdown' || state.raceState === 'staging') && !clutchPressed && state.gear !== 0) {
             state.raceState = 'foul'; 
             state.treeStep = 7; 
@@ -849,6 +881,8 @@
                 }
             }
         }
+
+        let isTireSpinning = false;
 
         // ================= PLAYER VEHICLE MECHANICAL PATHWAY =================
         if (state.gear === 0 || clutchPressed) {
@@ -907,21 +941,21 @@
                     torqueFactor = 1.0 - (overPeakPct * overPeakPct * 0.35);
                 }
 
+                // Wheelspin logic for U-2 Squeal synthesizer
+                if (state.gear === 1 && state.gas && state.rpm > 3200 && state.speed < 55) {
+                    isTireSpinning = true;
+                }
+
                 // DUAL-INPUT GAIN CALIBRATOR (2.5 Multiplier for Touchscreen)
                 const TOUCH_HP_SCALE = 2.5;
                 let touchMultiplier = (state.gasSource === 'touch') ? TOUCH_HP_SCALE : 1.0;
 
-                let nosBoost = state.nosEngaged ? 2.5 : 1.0; 
+                let nosBoost = (state.nosEngaged || (state.nosArmed && state.gas)) ? 2.5 : 1.0; 
                 const MONSTER_HP_SCALE = 45.0; 
 
                 let engineForce = 0;
                 if (state.gas) {
                     engineForce = torqueFactor * GEAR_RATIOS[state.gear] * nosBoost * MONSTER_HP_SCALE * touchMultiplier;
-                }
-
-                if (state.speed === 0 && state.distance === 0 && state.raceState === 'racing' && !state.screechPlayed) {
-                    AudioEngine.playScreech();
-                    state.screechPlayed = true;
                 }
 
                 let aeroDrag = state.speed * state.speed * 0.0005;
@@ -944,7 +978,6 @@
         if (state.time > 4.2) aiGear = 4;
         if (state.time > 6.2) aiGear = 5;
 
-        // Continuous Time Tracker during active run
         if (state.raceState === 'racing' || state.raceState === 'finished') {
             state.time = (performance.now() - state.startTime) / 1000;
         }
@@ -972,7 +1005,6 @@
 
         // ================= TRAP LINE WIN EVALUATIONS & INDEPENDENT ET RECORDING =================
         if (state.raceState === 'racing' || state.raceState === 'finished') {
-            // Player Finish Line Trap
             if (state.distance >= 1320 && !state.playerFinished) {
                 state.playerFinished = true;
                 state.playerEt = state.time;
@@ -983,7 +1015,6 @@
                 }
             }
 
-            // AI Finish Line Trap
             if (state.aiDistance >= 1320 && !state.aiFinished) {
                 state.aiFinished = true;
                 state.aiEt = state.time;
@@ -995,7 +1026,7 @@
             }
         }
 
-        AudioEngine.update(state.rpm, state.speed, state.gas);
+        AudioEngine.update(state.rpm, state.speed, state.gas, isTireSpinning);
     }
 
     function updateHUD() {
@@ -1005,7 +1036,6 @@
         UI.hudMph.innerText = Math.floor(state.speed * 0.681818); 
         UI.hudAiDist.innerText = Math.floor(state.aiDistance) + " ft";
 
-        // Display Player Trap Time (ET)
         if (state.playerEt !== null) {
             UI.playerEtBox.style.display = 'block';
             UI.playerEtVal.innerText = state.playerEt.toFixed(3) + "s";
@@ -1013,7 +1043,6 @@
             UI.playerEtBox.style.display = 'none';
         }
 
-        // Display AI Trap Time (ET)
         if (state.aiEt !== null) {
             UI.aiEtBox.style.display = 'block';
             UI.aiEtVal.innerText = state.aiEt.toFixed(3) + "s";
@@ -1021,7 +1050,6 @@
             UI.aiEtBox.style.display = 'none';
         }
 
-        // Display Reaction Time
         if (state.reactionTime !== null) {
             UI.reactionBox.style.display = 'block';
             if (state.reactionTime < 0) {
@@ -1139,8 +1167,8 @@
             let boxX = (canvas.width - boxWidth) / 2;
             let boxY = (canvas.height - boxHeight) / 2 - 15;
 
-            ctx.fillStyle = 'rgba(0,0,0,0.92)'; ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-            ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = 2; ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+            ctx.fillStyle = 'rgba(2, 2, 6, 0.92)'; ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+            ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 2; ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
             ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(state.logMsg, canvas.width * 0.5, boxY + boxHeight / 2);
             ctx.textBaseline = 'alphabetic'; 
@@ -1195,8 +1223,8 @@
         ctx.fillRect(w/2 - 32, -18, 22, 3); ctx.fillRect(w/2 - 32, -11, 22, 3);
 
         ctx.fillStyle = '#0a0a0a'; ctx.fillRect(-w/2 + 2, 0, 22, 18); ctx.fillRect(w/2 - 24, 0, 22, 18);
-        if (state.nosEngaged && state.gas) {
-            ctx.fillStyle = 'rgba(160, 200, 255, 0.7)';
+        if (state.nosEngaged || (state.nosArmed && state.gas)) {
+            ctx.fillStyle = 'rgba(0, 220, 255, 0.75)';
             for (let i = 0; i < 4; i++) {
                 ctx.beginPath(); ctx.arc(-w/3 - (Math.random()*12), -38 - (Math.random()*8), 3 + Math.random()*5, 0, Math.PI*2);
                 ctx.arc(w/3 + (Math.random()*12), -38 - (Math.random()*8), 3 + Math.random()*5, 0, Math.PI*2); ctx.fill();
@@ -1226,6 +1254,7 @@
         ctx.restore();
     }
 
+    // --- COCKPIT POV DRAWING WITH NITROUS PURGE VISUALS ---
     function drawInsideCockpit() {
         let dashY = canvas.height * 0.72; 
         
@@ -1233,6 +1262,29 @@
         
         ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(canvas.width * 0.08, 30); ctx.lineTo(canvas.width * 0.03, dashY); ctx.lineTo(0, dashY); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width * 0.92, 30); ctx.lineTo(canvas.width * 0.97, dashY); ctx.lineTo(canvas.width, dashY); ctx.closePath(); ctx.fill();
+
+        // COCKPIT NITROUS VISUAL PURGE EFFECT
+        if (state.nosEngaged || (state.nosArmed && state.gas)) {
+            // Blue atmospheric windshield glow
+            ctx.fillStyle = 'rgba(0, 180, 255, 0.12)';
+            ctx.fillRect(0, 30, canvas.width, dashY - 30);
+
+            // Plumes of nitrous steam shooting up from hood cowls
+            ctx.save();
+            ctx.fillStyle = 'rgba(180, 230, 255, 0.65)';
+            for (let i = 0; i < 5; i++) {
+                let px1 = canvas.width * 0.28 + (Math.random() - 0.5) * 35;
+                let py1 = dashY - 15 - (Math.random() * 85);
+                let sz1 = 4 + Math.random() * 12;
+                ctx.beginPath(); ctx.arc(px1, py1, sz1, 0, Math.PI * 2); ctx.fill();
+
+                let px2 = canvas.width * 0.72 + (Math.random() - 0.5) * 35;
+                let py2 = dashY - 15 - (Math.random() * 85);
+                let sz2 = 4 + Math.random() * 12;
+                ctx.beginPath(); ctx.arc(px2, py2, sz2, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.restore();
+        }
 
         ctx.fillStyle = '#08090a'; ctx.fillRect(canvas.width * 0.56, 30, 110, 26);
         ctx.strokeStyle = '#333'; ctx.strokeRect(canvas.width * 0.56, 30, 110, 26);
@@ -1261,6 +1313,11 @@
         ctx.fillStyle = '#151515'; ctx.fillRect(clusterLeft + 172, dashY - 28, 22, 18);
         ctx.fillStyle = state.shiftError ? '#ff0000' : '#00ff00'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
         ctx.fillText(state.gear !== 0 ? state.gear : (state.shiftError ? state.attemptedGear : "N"), clusterLeft + 183, dashY - 15);
+
+        // NOS Cockpit LED Light on dash
+        ctx.fillStyle = state.nosEngaged ? '#00e5ff' : (state.nosArmed ? '#ff3333' : '#112233');
+        ctx.fillRect(clusterLeft + 15, dashY - 28, 16, 10);
+        ctx.strokeStyle = '#333'; ctx.strokeRect(clusterLeft + 15, dashY - 28, 16, 10);
 
         let lightColor = (state.rpm >= REDLINE) ? '#ff0000' : '#220000';
         ctx.fillStyle = '#08080a'; ctx.fillRect(clusterLeft + clusterWidth - 8, dashY - 52, 22, 22); 
