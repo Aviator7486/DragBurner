@@ -290,7 +290,7 @@
         <div class="hud-col"><span class="hud-title">RPM</span><span id="hud-rpm" class="hud-val">1000</span></div>
         <div class="hud-col"><span class="hud-title">MPH</span><span id="hud-mph" class="hud-val">0</span></div>
         <div class="hud-col"><span class="hud-title">AI DIST</span><span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.0</span></div>
+        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.1</span></div>
     </div>
 
     <div id="player-et-box">MUSTANG ET: <span id="player-et-val" class="hud-val">--</span></div>
@@ -384,10 +384,12 @@
     const FINAL_DRIVE = 4.10;
     const VELOCITY_CONSTANT = 6.989; 
 
-    // --- SYNTHESIZED AUDIO ENGINE (U-2 PROCEDURAL TIRE SCREECH & SHIFT CHIRP) ---
+    // --- SYNTHESIZED AUDIO ENGINE (UNLOCKED MULTI-PLATFORM AUDIO PIPELINE) ---
     const AudioEngine = {
         ctx: null,
         masterGain: null,
+        streamDest: null,
+        playbackEl: null,
         engineOsc1: null,
         engineOsc2: null,
         engineGain: null,
@@ -402,15 +404,32 @@
         async init() {
             if (this.initialized) {
                 if (this.ctx && this.ctx.state === 'suspended') await this.ctx.resume();
+                if (this.playbackEl && !state.muted) this.playbackEl.play().catch(() => {});
                 return;
             }
             if (this.initializing) return; 
             this.initializing = true;
 
             try {
+                if (navigator.audioSession) {
+                    navigator.audioSession.type = "playback";
+                }
+
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 this.masterGain = this.ctx.createGain();
+
+                // Dual routing for standard WebAudio & Safari/iOS stream support
+                this.streamDest = this.ctx.createMediaStreamDestination();
+                this.masterGain.connect(this.streamDest);
                 this.masterGain.connect(this.ctx.destination);
+                
+                this.playbackEl = new Audio();
+                this.playbackEl.srcObject = this.streamDest.stream;
+
+                if (this.ctx.state === 'suspended') {
+                    await this.ctx.resume();
+                }
+
                 this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
 
                 // Car Powertrain Oscillators
@@ -454,7 +473,7 @@
                 this.windGainNode.connect(this.masterGain);
                 this.windNoiseNode.start(0);
 
-                // --- U-2 INTERCEPT PROCEDURAL CONTINUOUS TIRE SQUEAL ENGINE ---
+                // --- U-2 INTERCEPT CONTINUOUS TIRE SQUEAL ENGINE ---
                 this.squealOsc = this.ctx.createOscillator();
                 this.squealOsc.type = 'sawtooth';
                 this.squealOsc.frequency.setValueAtTime(1850, this.ctx.currentTime);
@@ -473,6 +492,10 @@
                 this.squealOsc.start(0);
 
                 this.initialized = true;
+
+                if (!state.muted && this.playbackEl) {
+                    await this.playbackEl.play().catch(() => {});
+                }
             } catch (e) {
                 console.error("Audio engine setup failed:", e);
             } finally {
@@ -480,9 +503,16 @@
             }
         },
 
-        setMute(isMuted) {
+        async setMute(isMuted) {
             if (!this.initialized) return;
-            this.masterGain.gain.setValueAtTime(isMuted ? 0 : 1, this.ctx.currentTime);
+            if (this.ctx && this.ctx.state === 'suspended' && !isMuted) {
+                await this.ctx.resume();
+            }
+            const vol = isMuted ? 0 : 1;
+            this.masterGain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            if (!isMuted && this.playbackEl) {
+                this.playbackEl.play().catch(() => {});
+            }
         },
 
         update(rpm, speed, gas, isSpinning) {
@@ -592,9 +622,13 @@
     document.addEventListener('click', unlockAudio);
 
     function bindButton(element, onPress, onRelease, isGasPedal = false) {
-        element.addEventListener('touchstart', (e) => { 
+        element.addEventListener('touchstart', async (e) => { 
             e.preventDefault(); 
-            if (!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init();
+            if (!AudioEngine.initialized && !AudioEngine.initializing) {
+                await AudioEngine.init();
+            } else if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') {
+                await AudioEngine.ctx.resume();
+            }
             element.classList.add('active'); 
             if (isGasPedal) state.gasSource = 'touch';
             onPress(); 
@@ -612,8 +646,12 @@
             onRelease(); 
         }, { passive: false });
 
-        element.addEventListener('mousedown', () => { 
-            if (!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init();
+        element.addEventListener('mousedown', async () => { 
+            if (!AudioEngine.initialized && !AudioEngine.initializing) {
+                await AudioEngine.init();
+            } else if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') {
+                await AudioEngine.ctx.resume();
+            }
             element.classList.add('active'); 
             if (isGasPedal) state.gasSource = 'touch';
             onPress(); 
@@ -644,28 +682,25 @@
         () => { state.clutchLeft = false; state.clutchRight = false; UI.clutchL.classList.remove('active'); }
     );
     
-    // Nitrous Engage works at any time when pressed
     bindButton(UI.nosLaunch, () => { state.nosEngaged = true; }, () => { state.nosEngaged = false; });
     
-    // Nitrous Arm Toggles at any time
-    UI.nosArm.addEventListener('click', (e) => { 
+    UI.nosArm.addEventListener('click', async (e) => { 
         e.preventDefault(); 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
+        if(!AudioEngine.initialized && !AudioEngine.initializing) await AudioEngine.init(); 
         state.nosArmed = !state.nosArmed; 
         UI.nosArm.classList.toggle('armed', state.nosArmed); 
     });
 
-    UI.pov.addEventListener('click', (e) => { 
+    UI.pov.addEventListener('click', async (e) => { 
         e.preventDefault(); 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
+        if(!AudioEngine.initialized && !AudioEngine.initializing) await AudioEngine.init(); 
         state.pov = state.pov === 'outside' ? 'inside' : 'outside'; 
         UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; 
     });
 
-    // Stage Car button works at any time to stage/reset
-    UI.stage.addEventListener('click', (e) => { 
+    UI.stage.addEventListener('click', async (e) => { 
         e.preventDefault(); 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
+        if(!AudioEngine.initialized && !AudioEngine.initializing) await AudioEngine.init(); 
         resetRace(); 
         state.raceState = 'staging'; 
         state.treeTimer = 0; 
@@ -676,14 +711,14 @@
         e.preventDefault();
         state.muted = !state.muted;
         await AudioEngine.init();
-        AudioEngine.setMute(state.muted);
+        await AudioEngine.setMute(state.muted);
 
         UI.sound.innerText = state.muted ? "🔇 SOUND: OFF" : "🔊 SOUND: ON";
         UI.sound.style.borderColor = state.muted ? "rgba(255, 51, 51, 0.8)" : "#00ffcc";
         UI.sound.style.color = state.muted ? "#ff3333" : "#00ffcc";
     });
 
-    // --- MECHANICAL SHIFTER ENGINE WITH TIRE CHIRP TRIGGER ---
+    // --- MECHANICAL SHIFTER ENGINE ---
     function attemptMoveShifter(tx, ty) {
         let currentY = shifterY;
         let clutchPressed = state.clutchLeft || state.clutchRight;
@@ -709,7 +744,6 @@
                     state.gear = targetGear;
                     
                     if (state.gear !== 0) {
-                        // High-RPM shift chirp trigger
                         if (oldRpm > 3800 && state.gas) {
                             AudioEngine.playTireChirp();
                         } else {
@@ -853,7 +887,6 @@
     function updatePhysics(dt) {
         let clutchPressed = state.clutchLeft || state.clutchRight;
 
-        // Early Launch checking during countdown matrix
         if ((state.raceState === 'countdown' || state.raceState === 'staging') && !clutchPressed && state.gear !== 0) {
             state.raceState = 'foul'; 
             state.treeStep = 7; 
