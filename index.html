@@ -226,7 +226,7 @@
         <div>RPM: <span id="hud-rpm" class="hud-val">1000</span></div>
         <div>MPH: <span id="hud-mph" class="hud-val">0</span></div>
         <div>AI DIST: <span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div>VER: <span class="hud-ver">1.25</span></div>
+        <div>VER: <span class="hud-ver">1.26</span></div>
     </div>
 
     <div id="reaction-box">REACTION TIME: <span id="rt-val">--</span></div>
@@ -852,7 +852,7 @@
 
                 // DUAL-INPUT GAIN CALIBRATOR:
                 // Boosts power on touch controls to offset mobile touch sampling latency
-                const TOUCH_HP_SCALE = 1.75;
+                const TOUCH_HP_SCALE = 2.0;
                 let touchMultiplier = (state.gasSource === 'touch') ? TOUCH_HP_SCALE : 1.0;
 
                 let nosBoost = state.nosEngaged ? 2.5 : 1.0; 
