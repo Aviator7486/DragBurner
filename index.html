@@ -11,20 +11,19 @@
             -webkit-user-select: none;
             margin: 0;
             padding: 0;
-            touch-action: none; /* Globally locks out mobile viewport zooming metrics */
+            touch-action: none;
         }
         body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #020208; /* Matches game sky so letterboxing bleeds seamlessly */
+            background-color: #020208;
             font-family: 'Courier New', Courier, monospace;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
-        /* Base Game Container optimized for cross-device scaling */
         #game-container {
             position: absolute;
             width: 932px;
@@ -290,7 +289,7 @@
         <div class="hud-col"><span class="hud-title">RPM</span><span id="hud-rpm" class="hud-val">1000</span></div>
         <div class="hud-col"><span class="hud-title">MPH</span><span id="hud-mph" class="hud-val">0</span></div>
         <div class="hud-col"><span class="hud-title">AI DIST</span><span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.2</span></div>
+        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.3</span></div>
     </div>
 
     <div id="player-et-box">MUSTANG ET: <span id="player-et-val" class="hud-val">--</span></div>
@@ -342,7 +341,6 @@
     window.addEventListener('resize', scaleGameViewport);
     scaleGameViewport();
 
-    // Simulation Game Loop State
     let state = {
         pov: 'outside', 
         raceState: 'idle', 
@@ -385,7 +383,7 @@
     const FINAL_DRIVE = 4.10;
     const VELOCITY_CONSTANT = 6.989; 
 
-    // --- SYNTHESIZED AUDIO ENGINE (PURE DIRECT WEBAUDIO - NO ECHO / NO MEDIA WIDGET) ---
+    // --- SYNTHESIZED AUDIO ENGINE (PURE DIRECT WEBAUDIO WITH AUTO-RESUME) ---
     const AudioEngine = {
         ctx: null,
         masterGain: null,
@@ -394,26 +392,26 @@
         engineGain: null,
         windNoiseNode: null,
         windGainNode: null,
+        squealOsc: null,
+        squealGain: null,
+        squealFilter: null,
         initialized: false,
-        initializing: false,
 
         async init() {
             if (this.initialized) {
-                if (this.ctx && this.ctx.state === 'suspended') await this.ctx.resume();
+                await this.ensureResumed();
                 return;
             }
-            if (this.initializing) return; 
-            this.initializing = true;
 
             try {
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 this.masterGain = this.ctx.createGain();
                 
-                // Direct speaker connection (prevents double-routing echo)
+                // Pure direct speaker connection
                 this.masterGain.connect(this.ctx.destination);
                 this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
 
-                // Car Powertrain Oscillators
+                // Powertrain Oscillators
                 this.engineOsc1 = this.ctx.createOscillator();
                 this.engineOsc2 = this.ctx.createOscillator();
                 this.engineGain = this.ctx.createGain();
@@ -454,24 +452,44 @@
                 this.windGainNode.connect(this.masterGain);
                 this.windNoiseNode.start(0);
 
+                // Continuous Launch Tire Squeal Synthesizer
+                this.squealOsc = this.ctx.createOscillator();
+                this.squealOsc.type = 'sawtooth';
+                this.squealOsc.frequency.setValueAtTime(1850, this.ctx.currentTime);
+
+                this.squealFilter = this.ctx.createBiquadFilter();
+                this.squealFilter.type = 'bandpass';
+                this.squealFilter.frequency.setValueAtTime(2100, this.ctx.currentTime);
+                this.squealFilter.Q.setValueAtTime(4.5, this.ctx.currentTime);
+
+                this.squealGain = this.ctx.createGain();
+                this.squealGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+
+                this.squealOsc.connect(this.squealFilter);
+                this.squealFilter.connect(this.squealGain);
+                this.squealGain.connect(this.masterGain);
+                this.squealOsc.start(0);
+
                 this.initialized = true;
+                await this.ensureResumed();
             } catch (e) {
                 console.error("Audio engine setup failed:", e);
-            } finally {
-                this.initializing = false;
+            }
+        },
+
+        async ensureResumed() {
+            if (this.ctx && this.ctx.state === 'suspended') {
+                await this.ctx.resume();
             }
         },
 
         async setMute(isMuted) {
-            if (!this.initialized) return;
-            if (this.ctx && this.ctx.state === 'suspended' && !isMuted) {
-                await this.ctx.resume();
-            }
-            const vol = isMuted ? 0 : 1;
-            this.masterGain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            if (!this.initialized) await this.init();
+            await this.ensureResumed();
+            this.masterGain.gain.setValueAtTime(isMuted ? 0 : 1, this.ctx.currentTime);
         },
 
-        update(rpm, speed, gas) {
+        update(rpm, speed, gas, isSpinning) {
             if (!this.initialized) return;
             let baseFreq = 22 + (rpm / 24);
             this.engineOsc1.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
@@ -483,11 +501,23 @@
 
             let mph = speed * 0.681818;
             this.windGainNode.gain.setValueAtTime(Math.min(mph / 320, 0.25), this.ctx.currentTime);
+
+            if (isSpinning && !state.muted) {
+                let targetGain = Math.min(0.28, 0.12 + (rpm / 7500) * 0.18);
+                this.squealGain.gain.setValueAtTime(targetGain, this.ctx.currentTime);
+                let sqPitch = 1750 + (speed * 8.0) + (Math.random() * 80);
+                this.squealOsc.frequency.setValueAtTime(sqPitch, this.ctx.currentTime);
+            } else {
+                this.squealGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+            }
         },
 
-        // Shift Tire Bark
-        playTireChirp() {
-            if (!this.initialized || state.muted) return;
+        // High-RPM Gear Shift Tire Bark
+        async playTireChirp() {
+            if (state.muted) return;
+            if (!this.initialized) await this.init();
+            await this.ensureResumed();
+
             let osc = this.ctx.createOscillator();
             let gain = this.ctx.createGain();
             let filter = this.ctx.createBiquadFilter();
@@ -511,9 +541,12 @@
             osc.stop(this.ctx.currentTime + 0.16);
         },
 
-        // Launch Tire Screech
-        playScreech() {
-            if (!this.initialized || state.muted) return;
+        // Hard Launch Tire Screech Sweep
+        async playScreech() {
+            if (state.muted) return;
+            if (!this.initialized) await this.init();
+            await this.ensureResumed();
+
             let osc = this.ctx.createOscillator();
             let gain = this.ctx.createGain();
             osc.type = 'sawtooth';
@@ -534,8 +567,11 @@
             osc.stop(this.ctx.currentTime + 0.4);
         },
 
-        playTone(freq, type, duration, volume) {
-            if (!this.initialized || state.muted) return;
+        async playTone(freq, type, duration, volume) {
+            if (state.muted) return;
+            if (!this.initialized) await this.init();
+            await this.ensureResumed();
+
             let osc = this.ctx.createOscillator();
             let gain = this.ctx.createGain();
             osc.type = type;
@@ -548,8 +584,10 @@
             osc.stop(this.ctx.currentTime + duration);
         },
 
-        playGrind() {
-            if (!this.initialized || state.muted) return;
+        async playGrind() {
+            if (state.muted) return;
+            if (!this.initialized) await this.init();
+            await this.ensureResumed();
             this.playTone(140, 'sawtooth', 0.22, 0.35);
             this.playTone(145, 'triangle', 0.22, 0.35);
         }
@@ -579,25 +617,22 @@
         rtVal: document.getElementById('rt-val')
     };
 
-    let audioUnlocked = false;
-    async function unlockAudio() {
-        if (audioUnlocked) return;
-        audioUnlocked = true;
-        await AudioEngine.init();
-        document.removeEventListener('touchstart', unlockAudio);
-        document.removeEventListener('click', unlockAudio);
+    // Global User Interaction Audio Unlock
+    async function globalUnlockAudio() {
+        if (!AudioEngine.initialized) {
+            await AudioEngine.init();
+        } else {
+            await AudioEngine.ensureResumed();
+        }
     }
-    document.addEventListener('touchstart', unlockAudio);
-    document.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', globalUnlockAudio, { passive: true });
+    window.addEventListener('mousedown', globalUnlockAudio);
+    window.addEventListener('keydown', globalUnlockAudio);
 
     function bindButton(element, onPress, onRelease, isGasPedal = false) {
         element.addEventListener('touchstart', async (e) => { 
             e.preventDefault(); 
-            if (!AudioEngine.initialized && !AudioEngine.initializing) {
-                await AudioEngine.init();
-            } else if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') {
-                await AudioEngine.ctx.resume();
-            }
+            await globalUnlockAudio();
             element.classList.add('active'); 
             if (isGasPedal) state.gasSource = 'touch';
             onPress(); 
@@ -616,11 +651,7 @@
         }, { passive: false });
 
         element.addEventListener('mousedown', async () => { 
-            if (!AudioEngine.initialized && !AudioEngine.initializing) {
-                await AudioEngine.init();
-            } else if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') {
-                await AudioEngine.ctx.resume();
-            }
+            await globalUnlockAudio();
             element.classList.add('active'); 
             if (isGasPedal) state.gasSource = 'touch';
             onPress(); 
@@ -655,21 +686,21 @@
     
     UI.nosArm.addEventListener('click', async (e) => { 
         e.preventDefault(); 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) await AudioEngine.init(); 
+        await globalUnlockAudio();
         state.nosArmed = !state.nosArmed; 
         UI.nosArm.classList.toggle('armed', state.nosArmed); 
     });
 
     UI.pov.addEventListener('click', async (e) => { 
         e.preventDefault(); 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) await AudioEngine.init(); 
+        await globalUnlockAudio();
         state.pov = state.pov === 'outside' ? 'inside' : 'outside'; 
         UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; 
     });
 
     UI.stage.addEventListener('click', async (e) => { 
         e.preventDefault(); 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) await AudioEngine.init(); 
+        await globalUnlockAudio();
         resetRace(); 
         state.raceState = 'staging'; 
         state.treeTimer = 0; 
@@ -679,7 +710,6 @@
     UI.sound.addEventListener('click', async (e) => {
         e.preventDefault();
         state.muted = !state.muted;
-        await AudioEngine.init();
         await AudioEngine.setMute(state.muted);
 
         UI.sound.innerText = state.muted ? "🔇 SOUND: OFF" : "🔊 SOUND: ON";
@@ -687,7 +717,7 @@
         UI.sound.style.color = state.muted ? "#ff3333" : "#00ffcc";
     });
 
-    // --- MECHANICAL SHIFTER ENGINE WITH TIRE CHIRP TRIGGER ---
+    // --- MECHANICAL SHIFTER ENGINE WITH HIGH-RPM TIRE CHIRP ---
     function attemptMoveShifter(tx, ty) {
         let currentY = shifterY;
         let clutchPressed = state.clutchLeft || state.clutchRight;
@@ -776,8 +806,8 @@
     }, { passive: true });
 
     let isMouseShifting = false;
-    UI.quadrant.addEventListener('mousedown', (e) => { 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
+    UI.quadrant.addEventListener('mousedown', async (e) => { 
+        await globalUnlockAudio();
         isMouseShifting = true; 
         processShiftAtCoords(e.clientX, e.clientY); 
     });
@@ -785,8 +815,8 @@
     window.addEventListener('mouseup', () => { isMouseShifting = false; });
 
     // Keyboard Input Processing
-    window.addEventListener('keydown', (e) => {
-        if (!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init();
+    window.addEventListener('keydown', async (e) => {
+        await globalUnlockAudio();
         if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) e.preventDefault(); 
         
         switch (e.key.toLowerCase()) {
@@ -885,6 +915,8 @@
             }
         }
 
+        let isTireSpinning = false;
+
         // ================= PLAYER VEHICLE MECHANICAL PATHWAY =================
         if (state.gear === 0 || clutchPressed) {
             if (state.gas) {
@@ -946,6 +978,10 @@
                 if (state.speed === 0 && state.distance === 0 && state.raceState === 'racing' && !state.screechPlayed) {
                     AudioEngine.playScreech();
                     state.screechPlayed = true;
+                }
+
+                if (state.gear === 1 && state.gas && state.rpm > 3200 && state.speed < 55) {
+                    isTireSpinning = true;
                 }
 
                 // DUAL-INPUT GAIN CALIBRATOR (2.5 Multiplier for Touchscreen)
@@ -1028,7 +1064,7 @@
             }
         }
 
-        AudioEngine.update(state.rpm, state.speed, state.gas);
+        AudioEngine.update(state.rpm, state.speed, state.gas, isTireSpinning);
     }
 
     function updateHUD() {
