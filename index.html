@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>92 Notchback vs 84 Firebird - 1/4 Mile Showdown</title>
+    <title>SAC Flight Line Escort - Turner AFB</title>
     <style>
         * {
             box-sizing: border-box;
@@ -11,13 +11,12 @@
             -webkit-user-select: none;
             margin: 0;
             padding: 0;
-            touch-action: none; /* Globally locks out mobile viewport zooming metrics */
         }
         body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #020208; /* Matches game sky so letterboxing bleeds seamlessly */
+            background-color: #050508;
             font-family: 'Courier New', Courier, monospace;
             display: flex;
             align-items: center;
@@ -31,10 +30,11 @@
             height: 430px;
             background: #000;
             overflow: hidden;
-            border: none;
-            border-radius: 0px;
+            border: 4px solid #333;
+            border-radius: 40px;
             transform-origin: center center;
-            box-shadow: none;
+            box-shadow: 0 0 35px rgba(0,0,0,0.9);
+            touch-action: none;
         }
 
         canvas {
@@ -44,146 +44,55 @@
             z-index: 1;
         }
 
-        /* Top HUD Layout - Translucent Glassmorphism */
+        /* Top HUD Configuration */
         #hud {
             position: absolute;
-            top: 12px;
+            top: 15px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
             display: flex;
-            gap: 18px;
+            gap: 15px;
             background: rgba(5, 5, 10, 0.65);
-            padding: 6px 16px;
+            padding: 8px 16px;
             border-radius: 10px;
             border: 1px solid rgba(85, 85, 85, 0.6);
             color: #fff;
             pointer-events: none;
             font-weight: bold;
             font-size: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        .hud-col {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .hud-title {
-            font-size: 10px;
-            color: #aaa;
-            margin-bottom: 2px;
-        }
-        .hud-val { color: #00ffcc; font-size: 13px; }
-        .hud-ver { color: #ffcc00; font-size: 13px; }
-
-        /* Telemetry Readout Containers - Translucent Glass Style */
-        #player-et-box {
-            position: absolute;
-            top: 65px;
-            left: 175px;
-            z-index: 10;
-            background: rgba(0, 0, 5, 0.82);
-            padding: 5px 12px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 204, 0, 0.8);
-            color: #ffcc00;
-            font-weight: bold;
-            font-size: 11px;
-            display: none;
             letter-spacing: 0.5px;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.25);
-            text-align: center;
         }
+        .hud-val { color: #00ffcc; }
+        .hud-alert { color: #ff3333; }
 
-        #reaction-box {
+        /* Tactical Spotter Radio Box Container */
+        #spotter-radio-box {
             position: absolute;
             top: 65px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
             background: rgba(0, 0, 5, 0.82);
-            padding: 5px 14px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 204, 0, 0.8);
-            color: #ffcc00;
-            font-weight: bold;
-            font-size: 11px;
-            display: none;
-            letter-spacing: 0.5px;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.25);
-            text-align: center;
-        }
-
-        #ai-et-box {
-            position: absolute;
-            top: 65px;
-            right: 175px;
-            z-index: 10;
-            background: rgba(0, 0, 5, 0.82);
-            padding: 5px 12px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 204, 0, 0.8);
-            color: #ffcc00;
-            font-weight: bold;
-            font-size: 11px;
-            display: none;
-            letter-spacing: 0.5px;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.25);
-            text-align: center;
-        }
-
-        #rt-val { font-size: 12px; }
-
-        /* Translucent Top Button Styles */
-        .top-btn {
-            position: absolute;
-            z-index: 11;
-            padding: 8px 12px;
-            background: rgba(34, 34, 34, 0.65);
-            color: #fff;
-            border: 2px solid rgba(85, 85, 85, 0.8);
+            padding: 6px 20px;
             border-radius: 8px;
+            border: 2px solid rgba(255, 204, 0, 0.9);
+            color: #ffcc00;
             font-weight: bold;
-            cursor: pointer;
-            width: 145px;
-            height: 34px;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
-            opacity: 0.85;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            text-align: center;
+            min-width: 380px;
+            box-shadow: 0 0 18px rgba(255, 204, 0, 0.35);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
         }
-        .top-btn:hover {
-            background: rgba(51, 51, 51, 0.9);
-            border-color: #00ffcc;
-            color: #00ffcc;
-            opacity: 1.0;
-        }
-        #pov-toggle {
-            top: 15px;
-            left: 20px;
-        }
-        #sound-toggle {
-            top: 54px;
-            left: 20px;
-            border-color: rgba(255, 51, 51, 0.8);
-            color: #ff3333;
-        }
-        #stage-btn {
-            top: 15px;
-            right: 20px;
-            background: rgba(212, 163, 115, 0.75);
-            color: #000;
-            border: 2px solid #fff;
-        }
-        #stage-btn:hover {
-            background: rgba(226, 180, 140, 0.95);
-            color: #000;
+        #spotter-radio-box.active {
+            opacity: 1;
         }
 
-        /* Control Zones */
+        /* Control Pedal Infrastructure */
         .control-zone {
             position: absolute;
             bottom: 15px;
@@ -191,21 +100,12 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            opacity: 0.82;
+            opacity: 0.72;
             transition: opacity 0.2s;
         }
-        .control-zone:hover { opacity: 0.98; }
-        
-        #left-controls {
-            left: 30px;
-            width: 110px;
-            height: 224px;
-        }
-        #right-controls {
-            right: 30px;
-            width: 216px; 
-            height: 312px; 
-        }
+        .control-zone:hover { opacity: 0.95; }
+        #left-controls { left: 30px; width: 110px; height: 224px; }
+        #right-controls { right: 30px; width: 216px; height: 312px; }
 
         .btn {
             background: linear-gradient(135deg, rgba(51,51,51,0.7), rgba(17,17,17,0.7));
@@ -228,16 +128,39 @@
         #btn-clutch-l { height: 99px; background: linear-gradient(135deg, rgba(68,68,68,0.7), rgba(34,34,34,0.7)); border-color: rgba(119,119,119,0.8); font-size: 16px; } 
         #btn-clutch-r { height: 45px; background: linear-gradient(135deg, rgba(68,68,68,0.7), rgba(34,34,34,0.7)); border-color: rgba(119,119,119,0.8); font-size: 14px; width: 100%; } 
 
-        .nos-row {
+        .top-btn {
+            position: absolute;
+            z-index: 9999;
+            padding: 8px 12px;
+            background: rgba(34, 34, 34, 0.65);
+            color: #fff;
+            border: 2px solid rgba(85, 85, 85, 0.8);
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 145px;
+            height: 34px;
+            font-size: 11px;
             display: flex;
-            gap: 10px;
-            height: 45px; 
-            width: 100%;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+            opacity: 0.75;
         }
-        #btn-nos-arm { flex: 1; background: linear-gradient(135deg, rgba(139,0,0,0.75), rgba(77,0,0,0.75)); border-color: rgba(255,0,0,0.8); font-size: 10px; }
-        #btn-nos-arm.armed { background: rgba(255, 51, 51, 0.9); border-color: #fff; color: #000; animation: pulse 0.5s infinite alternate; }
-        #btn-nos-launch { flex: 1; background: linear-gradient(135deg, rgba(0,0,139,0.75), rgba(0,0,77,0.75)); border-color: rgba(0,0,255,0.8); font-size: 10px; }
-        #btn-nos-launch.active { background: rgba(51, 51, 255, 0.95); border-color: #fff; }
+        .top-btn:hover {
+            background: rgba(51, 51, 51, 0.9);
+            border-color: #00ffcc;
+            color: #00ffcc;
+            opacity: 1.0;
+        }
+        .top-btn:active {
+            background: #00ffcc;
+            color: #000;
+            border-color: #fff;
+        }
+        #sound-toggle { top: 15px; left: 20px; border-color: rgba(255, 51, 51, 0.8); color: #ff3333; }
+        #initiate-btn { top: 15px; right: 20px; background: rgba(212, 163, 115, 0.75); color: #000; border: 2px solid #fff; }
+        #initiate-btn:hover { background: rgba(226, 180, 140, 0.95); border-color: #fff; color: #000; }
 
         .shifter-quadrant {
             display: grid;
@@ -261,7 +184,6 @@
             justify-content: center;
             border-radius: 6px;
         }
-        
         .shifter-quadrant .shift-gate.active {
             background: #ffcc00 !important;
             color: #000 !important;
@@ -270,32 +192,23 @@
             opacity: 1 !important;
         }
         .shift-gate.blank { opacity: 0.15; }
-
-        @keyframes pulse {
-            from { box-shadow: 0 0 2px #ff0000; }
-            to { box-shadow: 0 0 12px #ff0000; }
-        }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <button id="pov-toggle" class="top-btn">POV: OUTSIDE</button>
     <button id="sound-toggle" class="top-btn">🔇 SOUND: OFF</button>
-    <button id="stage-btn" class="top-btn">STAGE CAR</button>
+    <button id="initiate-btn" class="top-btn">COMMENCE ESCORT</button>
 
     <div id="hud">
-        <div class="hud-col"><span class="hud-title">DIST</span><span id="hud-dist" class="hud-val">0 ft</span></div>
-        <div class="hud-col"><span class="hud-title">GEAR</span><span id="hud-gear" class="hud-val">N</span></div>
-        <div class="hud-col"><span class="hud-title">RPM</span><span id="hud-rpm" class="hud-val">1000</span></div>
-        <div class="hud-col"><span class="hud-title">MPH</span><span id="hud-mph" class="hud-val">0</span></div>
-        <div class="hud-col"><span class="hud-title">AI DIST</span><span id="hud-aidist" class="hud-val">0 ft</span></div>
-        <div class="hud-col"><span class="hud-title">VER</span><span class="hud-ver">2.1</span></div>
+        <div>RUNWAY DIST: <span id="hud-dist" class="hud-val">0 ft</span></div>
+        <div>GEAR: <span id="hud-gear" class="hud-val">N</span></div>
+        <div>RPM: <span id="hud-rpm" class="hud-val">1000</span></div>
+        <div>CHASE MPH: <span id="hud-mph" class="hud-val">0</span></div>
+        <div>BUFFER: <span id="hud-buffer" class="hud-val">STANDBY</span></div>
     </div>
 
-    <div id="player-et-box">MUSTANG ET: <span id="player-et-val" class="hud-val">--</span></div>
-    <div id="reaction-box">REACTION TIME: <span id="rt-val">--</span></div>
-    <div id="ai-et-box">FIREBIRD ET: <span id="ai-et-val" class="hud-val">--</span></div>
+    <div id="spotter-radio-box">RADIO: WAITING AT THRESHOLD...</div>
 
     <div class="control-zone" id="left-controls">
         <div class="btn" id="btn-gas">GAS</div>
@@ -303,10 +216,7 @@
     </div>
 
     <div class="control-zone" id="right-controls">
-        <div class="nos-row">
-            <div class="btn" id="btn-nos-arm">N2O ARM</div>
-            <div class="btn" id="btn-nos-launch">N2O ENGAGE</div>
-        </div>
+        <div style="height: 45px; width: 100%;"></div> 
         
         <div class="shifter-quadrant" id="quadrant-zone">
             <div class="shift-gate" data-gear="1" data-x="0" data-y="0">1</div>
@@ -342,36 +252,31 @@
     window.addEventListener('resize', scaleGameViewport);
     scaleGameViewport();
 
-    // Simulation Game Loop State
     let state = {
-        pov: 'outside', 
-        raceState: 'idle', 
+        missionState: 'idle', // 'idle', 'approaching', 'chase', 'failed', 'secured'
         time: 0,
-        distance: 0, 
-        speed: 0, 
-        gear: 0, 
-        attemptedGear: 0, 
-        rpm: 1000,
-        aiDistance: 0,
-        aiSpeed: 0,
-        aiFinished: false,
-        playerFinished: false,
-        playerEt: null,
-        aiEt: null,
-        clutchLeft: false,
-        clutchRight: false,
-        gas: false,
-        gasSource: 'keyboard',
-        nosArmed: false,
-        nosEngaged: false,
-        treeTimer: 0,
-        treeStep: 0,
-        startTime: 0,
-        logMsg: "",
-        shiftError: false,
-        muted: true,
-        reactionTime: null
+        chaseStartTime: 0,
+        distance: 0, speed: 0, gear: 0, attemptedGear: 0, rpm: 1000,
+        planeDistance: -15, planeSpeed: 160, planeAltitude: 55, planeTilt: 0,
+        clutchLeft: false, clutchRight: false, gas: false, autoPlay: false,
+        logMsg: "", shiftError: false, radioMsg: "", radioTimer: 0,
+        calledAlts: new Set(),
+        muted: true, smokePuffs: [], carSmokeTimer: 0,
+        closeYellowTimer: 0, hasEstablishedChase: false, abortTriggered: false
     };
+
+    // Authentic U-2 Chase Pilot Altitude Callouts
+    const ALT_CALLOUTS = [
+        { alt: 50, text: "RADIO: 50 FEET...", duration: 2.4 },
+        { alt: 40, text: "RADIO: 40 FEET...", duration: 2.2 },
+        { alt: 30, text: "RADIO: 30 FEET...", duration: 2.0 },
+        { alt: 20, text: "RADIO: 20 FEET...", duration: 2.0 },
+        { alt: 10, text: "RADIO: 10 FEET...", duration: 1.9 },
+        { alt: 5,  text: "RADIO: 5 FEET...",  duration: 1.6 },
+        { alt: 3,  text: "RADIO: 3 FEET...",  duration: 1.6 },
+        { alt: 2,  text: "RADIO: 2 FEET...",  duration: 1.6 },
+        { alt: 1,  text: "RADIO: 1 FOOT... HOLD OFF...", duration: 2.2 }
+    ];
 
     let shifterX = 1; 
     let shifterY = 1; 
@@ -384,96 +289,101 @@
     const FINAL_DRIVE = 4.10;
     const VELOCITY_CONSTANT = 6.989; 
 
-    // --- SYNTHESIZED AUDIO ENGINE (UNLOCKED MULTI-PLATFORM AUDIO PIPELINE) ---
+    // --- SYNTHESIZED AUDIO ENGINE (PURE WEBAUDIO DIRECT ROUTING) ---
     const AudioEngine = {
-        ctx: null,
-        masterGain: null,
-        streamDest: null,
-        playbackEl: null,
-        engineOsc1: null,
-        engineOsc2: null,
-        engineGain: null,
-        windNoiseNode: null,
-        windGainNode: null,
-        squealOsc: null,
-        squealGain: null,
-        squealFilter: null,
-        initialized: false,
-        initializing: false,
+        ctx: null, masterGain: null,
+        engineOsc1: null, engineOsc2: null, engineGain: null,
+        windNoiseNode: null, windGainNode: null, 
+        jetNoiseNode: null, jetFilter: null, jetGainNode: null,
+        jetTurbine: null, jetTurbineGain: null,
+        squealOsc: null, squealGain: null, squealFilter: null,
+        initialized: false, initializing: false,
 
         async init() {
             if (this.initialized) {
                 if (this.ctx && this.ctx.state === 'suspended') await this.ctx.resume();
-                if (this.playbackEl && !state.muted) this.playbackEl.play().catch(() => {});
                 return;
             }
-            if (this.initializing) return; 
-            this.initializing = true;
-
+            if (this.initializing) return; this.initializing = true;
             try {
-                if (navigator.audioSession) {
-                    navigator.audioSession.type = "playback";
-                }
-
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 this.masterGain = this.ctx.createGain();
-
-                // Dual routing for standard WebAudio & Safari/iOS stream support
-                this.streamDest = this.ctx.createMediaStreamDestination();
-                this.masterGain.connect(this.streamDest);
                 this.masterGain.connect(this.ctx.destination);
-                
-                this.playbackEl = new Audio();
-                this.playbackEl.srcObject = this.streamDest.stream;
-
-                if (this.ctx.state === 'suspended') {
-                    await this.ctx.resume();
-                }
-
                 this.masterGain.gain.setValueAtTime(state.muted ? 0 : 1, this.ctx.currentTime);
 
-                // Car Powertrain Oscillators
+                // Car Powertrain Synthesis
                 this.engineOsc1 = this.ctx.createOscillator();
                 this.engineOsc2 = this.ctx.createOscillator();
                 this.engineGain = this.ctx.createGain();
-                this.engineOsc1.type = 'sawtooth';
-                this.engineOsc2.type = 'triangle';
+                this.engineOsc1.type = 'sawtooth'; this.engineOsc2.type = 'triangle';
 
-                let lowpass = this.ctx.createBiquadFilter();
-                lowpass.type = 'lowpass';
+                let lowpass = this.ctx.createBiquadFilter(); lowpass.type = 'lowpass';
                 lowpass.frequency.setValueAtTime(280, this.ctx.currentTime);
-
-                this.engineOsc1.connect(lowpass);
-                this.engineOsc2.connect(lowpass);
-                lowpass.connect(this.engineGain);
-                this.engineGain.connect(this.masterGain);
+                this.engineOsc1.connect(lowpass); this.engineOsc2.connect(lowpass);
+                lowpass.connect(this.engineGain); this.engineGain.connect(this.masterGain);
                 this.engineGain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                this.engineOsc1.start(0); this.engineOsc2.start(0);
 
-                this.engineOsc1.start(0);
-                this.engineOsc2.start(0);
-
-                // Wind Noise Generator
+                // Wind Ambience Noise
                 let bufferSize = 2 * this.ctx.sampleRate;
                 let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 let output = noiseBuffer.getChannelData(0);
                 for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
 
                 this.windNoiseNode = this.ctx.createBufferSource();
-                this.windNoiseNode.buffer = noiseBuffer;
-                this.windNoiseNode.loop = true;
-                
-                let windFilter = this.ctx.createBiquadFilter();
-                windFilter.type = 'lowpass';
+                this.windNoiseNode.buffer = noiseBuffer; this.windNoiseNode.loop = true;
+                let windFilter = this.ctx.createBiquadFilter(); windFilter.type = 'lowpass';
                 windFilter.frequency.setValueAtTime(180, this.ctx.currentTime);
-                this.windGainNode = this.ctx.createGain();
-                this.windGainNode.gain.setValueAtTime(0.0, this.ctx.currentTime);
+                this.windGainNode = this.ctx.createGain(); this.windGainNode.gain.setValueAtTime(0.0, this.ctx.currentTime);
+                this.windNoiseNode.connect(windFilter); windFilter.connect(this.windGainNode);
+                this.windGainNode.connect(this.masterGain); this.windNoiseNode.start(0);
 
-                this.windNoiseNode.connect(windFilter);
-                windFilter.connect(this.windGainNode);
-                this.windGainNode.connect(this.masterGain);
-                this.windNoiseNode.start(0);
+                // --- PURE PINK NOISE JET TURBINE & EXHAUST ROAR ---
+                let jetBufSize = 3 * this.ctx.sampleRate;
+                let jetNoiseBuffer = this.ctx.createBuffer(1, jetBufSize, this.ctx.sampleRate);
+                let jetData = jetNoiseBuffer.getChannelData(0);
+                let p0=0, p1=0, p2=0, p3=0, p4=0, p5=0, p6=0;
+                for (let i = 0; i < jetBufSize; i++) {
+                    let w = Math.random() * 2 - 1;
+                    p0 = 0.99886 * p0 + w * 0.0555179;
+                    p1 = 0.99332 * p1 + w * 0.0750759;
+                    p2 = 0.96900 * p2 + w * 0.1538520;
+                    p3 = 0.86650 * p3 + w * 0.3104856;
+                    p4 = 0.55000 * p4 + w * 0.5329522;
+                    p5 = -0.7616 * p5 - w * 0.0168980;
+                    jetData[i] = (p0 + p1 + p2 + p3 + p4 + p5 + p6 + w * 0.5362) * 0.09;
+                    p6 = w * 0.115926;
+                }
 
-                // --- U-2 INTERCEPT CONTINUOUS TIRE SQUEAL ENGINE ---
+                this.jetNoiseNode = this.ctx.createBufferSource();
+                this.jetNoiseNode.buffer = jetNoiseBuffer;
+                this.jetNoiseNode.loop = true;
+
+                this.jetFilter = this.ctx.createBiquadFilter();
+                this.jetFilter.type = 'lowpass';
+                this.jetFilter.frequency.setValueAtTime(150, this.ctx.currentTime);
+
+                this.jetGainNode = this.ctx.createGain();
+                this.jetGainNode.gain.setValueAtTime(0.0, this.ctx.currentTime);
+
+                this.jetTurbine = this.ctx.createOscillator();
+                this.jetTurbine.type = 'sine';
+                this.jetTurbine.frequency.setValueAtTime(1450, this.ctx.currentTime); 
+
+                this.jetTurbineGain = this.ctx.createGain();
+                this.jetTurbineGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+
+                this.jetNoiseNode.connect(this.jetFilter);
+                this.jetFilter.connect(this.jetGainNode);
+                this.jetGainNode.connect(this.masterGain);
+
+                this.jetTurbine.connect(this.jetTurbineGain);
+                this.jetTurbineGain.connect(this.masterGain);
+
+                this.jetNoiseNode.start(0);
+                this.jetTurbine.start(0);
+
+                // --- CONTINUOUS TIRE SQUEAL SYNTHESIZER ---
                 this.squealOsc = this.ctx.createOscillator();
                 this.squealOsc.type = 'sawtooth';
                 this.squealOsc.frequency.setValueAtTime(1850, this.ctx.currentTime);
@@ -492,27 +402,13 @@
                 this.squealOsc.start(0);
 
                 this.initialized = true;
-
-                if (!state.muted && this.playbackEl) {
-                    await this.playbackEl.play().catch(() => {});
-                }
-            } catch (e) {
-                console.error("Audio engine setup failed:", e);
-            } finally {
-                this.initializing = false;
-            }
+            } catch (e) { console.error("Audio Engine setup failed:", e); } finally { this.initializing = false; }
         },
 
-        async setMute(isMuted) {
+        setMute(isMuted) {
             if (!this.initialized) return;
-            if (this.ctx && this.ctx.state === 'suspended' && !isMuted) {
-                await this.ctx.resume();
-            }
-            const vol = isMuted ? 0 : 1;
-            this.masterGain.gain.setValueAtTime(vol, this.ctx.currentTime);
-            if (!isMuted && this.playbackEl) {
-                this.playbackEl.play().catch(() => {});
-            }
+            this.masterGain.gain.setValueAtTime(isMuted ? 0 : 1, this.ctx.currentTime);
+            if (isMuted && 'speechSynthesis' in window) window.speechSynthesis.cancel();
         },
 
         update(rpm, speed, gas, isSpinning) {
@@ -520,15 +416,11 @@
             let baseFreq = 22 + (rpm / 24);
             this.engineOsc1.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
             this.engineOsc2.frequency.setValueAtTime(baseFreq * 0.5, this.ctx.currentTime);
-
-            let loadGain = gas ? 0.22 : 0.08;
-            if (state.gear === 0) loadGain *= 0.7;
+            let loadGain = gas ? 0.22 : 0.08; if (state.gear === 0) loadGain *= 0.7;
             this.engineGain.gain.setValueAtTime(loadGain, this.ctx.currentTime);
-
             let mph = speed * 0.681818;
             this.windGainNode.gain.setValueAtTime(Math.min(mph / 320, 0.25), this.ctx.currentTime);
 
-            // Continuous Launch Squeal Modulation
             if (isSpinning && !state.muted) {
                 let targetGain = Math.min(0.28, 0.12 + (rpm / 7500) * 0.18);
                 this.squealGain.gain.setValueAtTime(targetGain, this.ctx.currentTime);
@@ -537,9 +429,28 @@
             } else {
                 this.squealGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
             }
+
+            if (state.missionState !== 'idle') {
+                let dx = state.planeDistance - state.distance;
+                let dy = state.planeAltitude * 10;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+
+                let maxDist = 1200;
+                let proxFactor = Math.max(0, Math.min(1, 1 - (dist / maxDist)));
+
+                let jetVol = Math.pow(proxFactor, 1.2) * 0.75;
+                let cutoffFreq = 120 + (proxFactor * 680); 
+                let turbineWhineVol = Math.pow(proxFactor, 2.0) * 0.035;
+
+                this.jetGainNode.gain.setValueAtTime(jetVol, this.ctx.currentTime);
+                this.jetFilter.frequency.setValueAtTime(cutoffFreq, this.ctx.currentTime);
+                this.jetTurbineGain.gain.setValueAtTime(turbineWhineVol, this.ctx.currentTime);
+            } else {
+                this.jetGainNode.gain.setValueAtTime(0.0, this.ctx.currentTime);
+                this.jetTurbineGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+            }
         },
 
-        // --- U-2 SHIFT TIRE CHIRP SYNTHESIZER ---
         playTireChirp() {
             if (!this.initialized || state.muted) return;
             let osc = this.ctx.createOscillator();
@@ -567,111 +478,123 @@
 
         playTone(freq, type, duration, volume) {
             if (!this.initialized || state.muted) return;
-            let osc = this.ctx.createOscillator();
-            let gain = this.ctx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
             gain.gain.setValueAtTime(volume, this.ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-            osc.connect(gain);
-            gain.connect(this.masterGain);
-            osc.start(0);
-            osc.stop(this.ctx.currentTime + duration);
+            osc.connect(gain); gain.connect(this.masterGain);
+            osc.start(0); osc.stop(this.ctx.currentTime + duration);
         },
 
-        playGrind() {
+        playRadioSquelch() {
             if (!this.initialized || state.muted) return;
-            this.playTone(140, 'sawtooth', 0.22, 0.35);
-            this.playTone(145, 'triangle', 0.22, 0.35);
+            let bufferSize = Math.floor(this.ctx.sampleRate * 0.08);
+            let noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            let output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1) * 0.25;
+
+            let whiteNoise = this.ctx.createBufferSource();
+            whiteNoise.buffer = noiseBuffer;
+            let bandpass = this.ctx.createBiquadFilter();
+            bandpass.type = 'bandpass';
+            bandpass.frequency.setValueAtTime(1200, this.ctx.currentTime);
+            bandpass.Q.setValueAtTime(2.5, this.ctx.currentTime);
+
+            whiteNoise.connect(bandpass);
+            bandpass.connect(this.masterGain);
+            whiteNoise.start(0);
         }
     };
 
+    // --- DUAL-ROLE VOICE SYNTHESIZER ENGINE ---
+    const VoiceEngine = {
+        speak(text, role = 'spotter') {
+            if (state.muted || !('speechSynthesis' in window)) return;
+
+            window.speechSynthesis.cancel();
+
+            let spokenText = text.replace(/^RADIO:\s*/i, '')
+                                 .replace(/\.\.\.$/, '')
+                                 .replace(/!/g, '');
+
+            spokenText = spokenText.replace(/\bpace\b/gi, 'payce');
+
+            let utterance = new SpeechSynthesisUtterance(spokenText);
+            let voices = window.speechSynthesis.getVoices();
+
+            if (role === 'pilot') {
+                utterance.rate = 0.95;
+                utterance.pitch = 0.88;
+                utterance.volume = 1.0;
+                let pilotVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('George') || v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('UK')));
+                if (pilotVoice) utterance.voice = pilotVoice;
+            } else {
+                utterance.rate = 0.82;  
+                utterance.pitch = 0.45; 
+                utterance.volume = 1.0;
+                let spotterVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Male') || v.name.includes('David') || v.name.includes('George') || v.name.includes('Google') || v.name.includes('Natural')));
+                if (spotterVoice) utterance.voice = spotterVoice;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+    };
+
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+    }
+
     const UI = {
         gas: document.getElementById('btn-gas'),
-        clutchL: document.getElementById('btn-clutch-l'),
-        clutchR: document.getElementById('btn-clutch-r'),
-        nosArm: document.getElementById('btn-nos-arm'),
-        nosLaunch: document.getElementById('btn-nos-launch'),
-        pov: document.getElementById('pov-toggle'),
-        sound: document.getElementById('sound-toggle'),
-        stage: document.getElementById('stage-btn'),
-        quadrant: document.getElementById('quadrant-zone'),
-        gates: document.querySelectorAll('.shift-gate'),
-        hudDist: document.getElementById('hud-dist'),
-        hudGear: document.getElementById('hud-gear'),
-        hudRpm: document.getElementById('hud-rpm'),
-        hudMph: document.getElementById('hud-mph'),
-        hudAiDist: document.getElementById('hud-aidist'),
-        playerEtBox: document.getElementById('player-et-box'),
-        playerEtVal: document.getElementById('player-et-val'),
-        aiEtBox: document.getElementById('ai-et-box'),
-        aiEtVal: document.getElementById('ai-et-val'),
-        reactionBox: document.getElementById('reaction-box'),
-        rtVal: document.getElementById('rt-val')
+        clutchL: document.getElementById('btn-clutch-l'), clutchR: document.getElementById('btn-clutch-r'),
+        sound: document.getElementById('sound-toggle'), initiate: document.getElementById('initiate-btn'),
+        quadrant: document.getElementById('quadrant-zone'), gates: document.querySelectorAll('.shift-gate'),
+        hudDist: document.getElementById('hud-dist'), hudGear: document.getElementById('hud-gear'),
+        hudRpm: document.getElementById('hud-rpm'), hudMph: document.getElementById('hud-mph'),
+        hudBuffer: document.getElementById('hud-buffer'), radioBox: document.getElementById('spotter-radio-box')
     };
 
     let audioUnlocked = false;
     async function unlockAudio() {
-        if (audioUnlocked) return;
-        audioUnlocked = true;
+        if (audioUnlocked) return; audioUnlocked = true;
         await AudioEngine.init();
-        document.removeEventListener('touchstart', unlockAudio);
-        document.removeEventListener('click', unlockAudio);
-    }
-    document.addEventListener('touchstart', unlockAudio);
-    document.addEventListener('click', unlockAudio);
-
-    function bindButton(element, onPress, onRelease, isGasPedal = false) {
-        element.addEventListener('touchstart', async (e) => { 
-            e.preventDefault(); 
-            if (!AudioEngine.initialized && !AudioEngine.initializing) {
-                await AudioEngine.init();
-            } else if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') {
-                await AudioEngine.ctx.resume();
-            }
-            element.classList.add('active'); 
-            if (isGasPedal) state.gasSource = 'touch';
-            onPress(); 
-        }, { passive: false });
-
-        element.addEventListener('touchend', (e) => { 
-            e.preventDefault(); 
-            element.classList.remove('active'); 
-            onRelease(); 
-        }, { passive: false });
-
-        element.addEventListener('touchcancel', (e) => { 
-            e.preventDefault(); 
-            element.classList.remove('active'); 
-            onRelease(); 
-        }, { passive: false });
-
-        element.addEventListener('mousedown', async () => { 
-            if (!AudioEngine.initialized && !AudioEngine.initializing) {
-                await AudioEngine.init();
-            } else if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') {
-                await AudioEngine.ctx.resume();
-            }
-            element.classList.add('active'); 
-            if (isGasPedal) state.gasSource = 'touch';
-            onPress(); 
-        });
-
-        element.addEventListener('mouseup', () => { 
-            element.classList.remove('active'); 
-            onRelease(); 
-        });
-
-        element.addEventListener('mouseleave', () => { 
-            if (element.classList.contains('active')) { 
-                element.classList.remove('active'); 
-                onRelease(); 
-            } 
-        });
     }
 
-    // ALWAYS-ACTIVE CONTROL BINDINGS
-    bindButton(UI.gas, () => { state.gas = true; }, () => { state.gas = false; }, true);
+    function spawnCarTireSmoke(count = 3) {
+        for (let i = 0; i < count; i++) {
+            state.smokePuffs.push({
+                d: state.distance - 3.5 - Math.random() * 2.0,
+                laneOffset: -1.0 + (Math.random() - 0.5) * 0.22,
+                xOffset: (Math.random() - 0.5) * 6,
+                yOffset: (Math.random() - 0.5) * 2,
+                life: 0.65, maxLife: 0.65,
+                startSize: 6, endSize: 22
+            });
+        }
+    }
+
+    function triggerRadioCall(msgText, duration, role = 'spotter') {
+        state.radioMsg = msgText;
+        state.radioTimer = duration;
+        UI.radioBox.innerText = msgText;
+        UI.radioBox.classList.add('active');
+
+        AudioEngine.playRadioSquelch();
+        VoiceEngine.speak(msgText, role);
+    }
+
+    function bindButton(element, onPress, onRelease) {
+        element.addEventListener('pointerdown', (e) => { 
+            e.preventDefault(); unlockAudio();
+            if (state.autoPlay) return; 
+            element.classList.add('active'); onPress(); 
+        });
+        element.addEventListener('pointerup', (e) => { e.preventDefault(); element.classList.remove('active'); onRelease(); });
+        element.addEventListener('pointercancel', (e) => { e.preventDefault(); element.classList.remove('active'); onRelease(); });
+        element.addEventListener('pointerleave', (e) => { if (element.classList.contains('active')) { element.classList.remove('active'); onRelease(); } });
+    }
+
+    bindButton(UI.gas, () => { state.gas = true; }, () => { state.gas = false; });
     
     bindButton(UI.clutchL, 
         () => { state.clutchLeft = true; state.clutchRight = true; UI.clutchR.classList.add('active'); }, 
@@ -681,89 +604,58 @@
         () => { state.clutchLeft = true; state.clutchRight = true; UI.clutchL.classList.add('active'); }, 
         () => { state.clutchLeft = false; state.clutchRight = false; UI.clutchL.classList.remove('active'); }
     );
-    
-    bindButton(UI.nosLaunch, () => { state.nosEngaged = true; }, () => { state.nosEngaged = false; });
-    
-    UI.nosArm.addEventListener('click', async (e) => { 
-        e.preventDefault(); 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) await AudioEngine.init(); 
-        state.nosArmed = !state.nosArmed; 
-        UI.nosArm.classList.toggle('armed', state.nosArmed); 
+
+    function bindMenuAction(element, actionHandler) {
+        element.addEventListener('pointerdown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            unlockAudio(); actionHandler();
+        });
+    }
+
+    bindMenuAction(UI.initiate, () => {
+        resetMission(); state.missionState = 'approaching';
+        triggerRadioCall("RADIO: RECON OVERHEAD INBOUND... PRE-REV ENGINE!", 2.8, 'spotter');
     });
 
-    UI.pov.addEventListener('click', async (e) => { 
-        e.preventDefault(); 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) await AudioEngine.init(); 
-        state.pov = state.pov === 'outside' ? 'inside' : 'outside'; 
-        UI.pov.innerText = `POV: ${state.pov.toUpperCase()}`; 
-    });
-
-    UI.stage.addEventListener('click', async (e) => { 
-        e.preventDefault(); 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) await AudioEngine.init(); 
-        resetRace(); 
-        state.raceState = 'staging'; 
-        state.treeTimer = 0; 
-        state.treeStep = 1; 
-    });
-
-    UI.sound.addEventListener('click', async (e) => {
-        e.preventDefault();
+    bindMenuAction(UI.sound, () => {
         state.muted = !state.muted;
-        await AudioEngine.init();
-        await AudioEngine.setMute(state.muted);
-
+        AudioEngine.setMute(state.muted);
         UI.sound.innerText = state.muted ? "🔇 SOUND: OFF" : "🔊 SOUND: ON";
-        UI.sound.style.borderColor = state.muted ? "rgba(255, 51, 51, 0.8)" : "#00ffcc";
+        UI.sound.style.borderColor = state.muted ? "#ff3333" : "#00ffcc"; 
         UI.sound.style.color = state.muted ? "#ff3333" : "#00ffcc";
     });
 
-    // --- MECHANICAL SHIFTER ENGINE ---
     function attemptMoveShifter(tx, ty) {
+        if (state.autoPlay) return;
         let currentY = shifterY;
         let clutchPressed = state.clutchLeft || state.clutchRight;
         
         if (currentY === 1 && (ty === 0 || ty === 2)) {
             let targetGear = 0;
-            if (ty === 0) {
-                if (tx === 0) targetGear = 1;
-                if (tx === 1) targetGear = 3;
-                if (tx === 2) targetGear = 5;
-            } else if (ty === 2) {
-                if (tx === 0) targetGear = 2;
-                if (tx === 1) targetGear = 4;
-                if (tx === 2) targetGear = 6;
-            }
+            if (ty === 0) targetGear = [1, 3, 5][tx];
+            else if (ty === 2) targetGear = [2, 4, 6][tx];
             
             if (clutchPressed) {
-                shifterX = tx;
-                shifterY = ty;
-                state.shiftError = false;
+                shifterX = tx; shifterY = ty; state.shiftError = false;
                 if (state.gear !== targetGear) {
                     let oldRpm = state.rpm;
                     state.gear = targetGear;
                     
                     if (state.gear !== 0) {
-                        if (oldRpm > 3800 && state.gas) {
+                        if ((state.gear === 2 || state.gear === 3) && oldRpm > 4200 && state.gas) {
                             AudioEngine.playTireChirp();
+                            spawnCarTireSmoke(5);
                         } else {
                             AudioEngine.playTone(580, 'sine', 0.04, 0.25);
                         }
                     }
                 }
             } else {
-                shifterX = tx;
-                shifterY = 1; 
-                state.gear = 0; 
-                state.attemptedGear = targetGear; 
-                state.shiftError = true;
-                AudioEngine.playGrind();
+                shifterX = tx; shifterY = 1; state.gear = 0; state.attemptedGear = targetGear; state.shiftError = true;
+                AudioEngine.playTone(140, 'sawtooth', 0.22, 0.35);
             }
         } 
-        else if ((currentY === 0 || currentY === 2) && ty === 1) {
-            shifterX = tx; shifterY = 1; state.gear = 0; state.shiftError = false;
-        } 
-        else if (currentY === 1 && ty === 1) {
+        else if (((currentY === 0 || currentY === 2) && ty === 1) || (currentY === 1 && ty === 1)) {
             shifterX = tx; shifterY = 1; state.gear = 0; state.shiftError = false;
         }
         updateShifterVisuals();
@@ -774,61 +666,27 @@
         if (targetElement && targetElement.classList.contains('shift-gate')) {
             let tx = parseInt(targetElement.getAttribute('data-x'));
             let ty = parseInt(targetElement.getAttribute('data-y'));
-            
             if (shifterX !== tx || shifterY !== ty) {
-                let dx = Math.abs(tx - shifterX);
-                let dy = Math.abs(ty - shifterY);
-                
-                if ((dx + dy === 1) && (dy === 0 ? shifterY === 1 : true)) {
+                if ((Math.abs(tx - shifterX) + Math.abs(ty - shifterY) === 1) && (shifterY === 1 ? true : ty === 1)) {
                     attemptMoveShifter(tx, ty);
                 }
             }
         }
     }
 
-    UI.quadrant.addEventListener('touchmove', (e) => { 
-        let rect = UI.quadrant.getBoundingClientRect();
-        for (let i = 0; i < e.touches.length; i++) {
-            let t = e.touches[i];
-            if (t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom) {
-                processShiftAtCoords(t.clientX, t.clientY);
-            }
-        }
-    }, { passive: true });
-
-    UI.quadrant.addEventListener('touchstart', (e) => { 
-        let rect = UI.quadrant.getBoundingClientRect();
-        for (let i = 0; i < e.touches.length; i++) {
-            let t = e.touches[i];
-            if (t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom) {
-                processShiftAtCoords(t.clientX, t.clientY);
-            }
-        }
-    }, { passive: true });
-
     let isMouseShifting = false;
-    UI.quadrant.addEventListener('mousedown', (e) => { 
-        if(!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init(); 
-        isMouseShifting = true; 
-        processShiftAtCoords(e.clientX, e.clientY); 
+    UI.quadrant.addEventListener('pointerdown', (e) => { 
+        unlockAudio(); if (state.autoPlay) return; isMouseShifting = true; processShiftAtCoords(e.clientX, e.clientY); 
     });
-    window.addEventListener('mousemove', (e) => { if (isMouseShifting) processShiftAtCoords(e.clientX, e.clientY); });
+    window.addEventListener('pointermove', (e) => { if (isMouseShifting) processShiftAtCoords(e.clientX, e.clientY); });
     window.addEventListener('mouseup', () => { isMouseShifting = false; });
 
-    // Keyboard Input Processing
     window.addEventListener('keydown', (e) => {
-        if (!AudioEngine.initialized && !AudioEngine.initializing) AudioEngine.init();
+        unlockAudio(); if (state.autoPlay) return;
         if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) e.preventDefault(); 
-        
         switch (e.key.toLowerCase()) {
-            case 'x': 
-                state.gas = true; 
-                state.gasSource = 'keyboard';
-                UI.gas.classList.add('active'); 
-                break;
+            case 'x': state.gas = true; UI.gas.classList.add('active'); break;
             case 'c': state.clutchLeft = true; state.clutchRight = true; UI.clutchL.classList.add('active'); UI.clutchR.classList.add('active'); break;
-            case 'a': state.nosArmed = !state.nosArmed; UI.nosArm.classList.toggle('armed', state.nosArmed); break;
-            case 'n': state.nosEngaged = true; UI.nosLaunch.classList.add('active'); break;
             case 'arrowup': if (shifterY > 0) attemptMoveShifter(shifterX, shifterY - 1); break;
             case 'arrowdown': if (shifterY < 2) attemptMoveShifter(shifterX, shifterY + 1); break;
             case 'arrowleft': if (shifterY === 1 && shifterX > 0) attemptMoveShifter(shifterX - 1, shifterY); break;
@@ -840,225 +698,225 @@
         switch (e.key.toLowerCase()) {
             case 'x': state.gas = false; UI.gas.classList.remove('active'); break;
             case 'c': state.clutchLeft = false; state.clutchRight = false; UI.clutchL.classList.remove('active'); UI.clutchR.classList.remove('active'); break;
-            case 'n': state.nosEngaged = false; UI.nosLaunch.classList.remove('active'); break;
         }
     });
 
     function updateShifterVisuals() {
         UI.gates.forEach(g => {
-            let gx = parseInt(g.getAttribute('data-x'));
-            let gy = parseInt(g.getAttribute('data-y'));
-            if (gx === shifterX && gy === shifterY) g.classList.add('active');
-            else g.classList.remove('active');
+            let gx = parseInt(g.getAttribute('data-x')); let gy = parseInt(g.getAttribute('data-y'));
+            if (gx === shifterX && gy === shifterY) g.classList.add('active'); else g.classList.remove('active');
         });
     }
 
-    function resetRace() {
-        state.time = 0; state.distance = 0; state.speed = 0; state.gear = 0; state.rpm = IDLE_RPM;
-        state.aiDistance = 0; state.aiSpeed = 0; 
-        state.aiFinished = false; state.playerFinished = false;
-        state.playerEt = null; state.aiEt = null;
-        state.raceState = 'idle'; state.logMsg = ""; 
-        shifterX = 1; shifterY = 1; 
-        state.shiftError = false;
-        state.reactionTime = null;
-        updateShifterVisuals();
-        lastTime = performance.now(); 
+    function resetMission() {
+        state.time = 0; state.chaseStartTime = 0; state.distance = 0; state.speed = 0; state.gear = 0; state.attemptedGear = 0; state.rpm = IDLE_RPM;
+        state.planeDistance = -15; state.planeSpeed = 160; state.planeAltitude = 55; state.planeTilt = 0;
+        state.missionState = 'idle'; state.logMsg = ""; shifterX = 1; shifterY = 1; state.shiftError = false; state.autoPlay = false;
+        state.radioTimer = 0; state.radioMsg = ""; state.calledAlts.clear();
+        state.closeYellowTimer = 0; state.hasEstablishedChase = false; state.abortTriggered = false;
+        UI.radioBox.innerText = ""; UI.radioBox.classList.remove('active');
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        state.smokePuffs = []; updateShifterVisuals();
+        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
     }
 
     function getProjection(objDistance, laneOffset = 0) {
         let diff = objDistance - state.distance;
-        let horizon = canvas.height * 0.45;
-        let playerY = canvas.height * 0.85;
-        let horizonX = canvas.width * 0.5; 
-        let camOffsetLane = 0;            
+        let horizon = canvas.height * 0.45; let playerY = canvas.height * 0.85; let horizonX = canvas.width * 0.5; 
         
-        if (state.pov === 'inside') camOffsetLane = -1; 
-        
-        let y = horizon + (playerY - horizon) / (1 + diff * 0.012);
+        let transformFactor = 1 + diff * 0.012;
+        if (transformFactor < 0.1) transformFactor = 0.1; 
+
+        let y = horizon + (playerY - horizon) / transformFactor;
         let scale = (y - horizon) / (playerY - horizon);
         let laneSpacing = canvas.width * 0.24;
-        let x = horizonX + (laneOffset - camOffsetLane) * laneSpacing * scale;
+        let x = horizonX + laneOffset * laneSpacing * scale;
         
-        return { x: x, y: y, scale: scale, visible: (diff > -55 && diff < 1200) };
+        return { x: x, y: y, scale: scale, visible: (diff >= -150 && diff < 1200) };
     }
 
-    // --- REAL-TIME PHYSICS ENGINE ---
+    // --- REAL-TIME PHYSICAL TIME ENVIRONMENT MATRIX ---
     function updatePhysics(dt) {
         let clutchPressed = state.clutchLeft || state.clutchRight;
 
-        if ((state.raceState === 'countdown' || state.raceState === 'staging') && !clutchPressed && state.gear !== 0) {
-            state.raceState = 'foul'; 
-            state.treeStep = 7; 
-            state.logMsg = "FOUL! JUMPED THE TREE!";
-            state.reactionTime = -0.001;
-            AudioEngine.playTone(220, 'sawtooth', 0.6, 0.45); 
-        }
-
-        if (state.raceState === 'staging' || state.raceState === 'countdown') {
-            let oldStep = state.treeStep;
-            state.treeTimer += dt;
-            if (state.treeStep === 1 && state.treeTimer > 0.6) { state.treeStep = 2; state.treeTimer = 0; state.raceState = 'countdown'; } 
-            if (state.treeStep === 2 && state.treeTimer > 0.5) { state.treeStep = 3; state.treeTimer = 0; } 
-            if (state.treeStep === 3 && state.treeTimer > 0.5) { state.treeStep = 4; state.treeTimer = 0; } 
-            if (state.treeStep === 4 && state.treeTimer > 0.5) { state.treeStep = 5; state.treeTimer = 0; } 
-            if (state.treeStep === 5 && state.treeTimer > 0.5) { 
-                state.treeStep = 6; state.treeTimer = 0; state.raceState = 'racing'; state.startTime = performance.now();
-            }
-
-            if (state.treeStep !== oldStep) {
-                if (state.treeStep >= 3 && state.treeStep <= 5) {
-                    AudioEngine.playTone(440, 'sine', 0.12, 0.3); 
-                } else if (state.treeStep === 6) {
-                    AudioEngine.playTone(880, 'sine', 0.40, 0.4); 
-                }
+        if (state.radioTimer > 0) {
+            state.radioTimer -= dt;
+            if (state.radioTimer <= 0) {
+                state.radioTimer = 0;
+                UI.radioBox.classList.remove('active');
             }
         }
 
         let isTireSpinning = false;
 
-        // ================= PLAYER VEHICLE MECHANICAL PATHWAY =================
-        if (state.gear === 0 || clutchPressed) {
-            if (state.gas) {
-                state.rpm += 18000 * dt; 
-                if (state.rpm > MAX_RPM) state.rpm = MAX_RPM - (Math.random() * 150); 
-            } else {
-                state.rpm -= 7000 * dt;
-                if (state.rpm < IDLE_RPM) state.rpm = IDLE_RPM;
-            }
+        if (state.autoPlay) {
+            let targetChaseDistance = state.planeDistance - 48; 
+            let distanceGapError = targetChaseDistance - state.distance;
             
-            let dragDecel = (state.speed * state.speed * 0.0004) + 4.0;
-            state.speed -= dragDecel * dt;
+            state.speed = state.planeSpeed + distanceGapError * 4.5;
             if (state.speed < 0) state.speed = 0;
-            state.distance += state.speed * dt;
-        } else {
-            let ratioMult = GEAR_RATIOS[state.gear] * FINAL_DRIVE * VELOCITY_CONSTANT;
-            let mechanicalRpm = IDLE_RPM + (state.speed * ratioMult);
 
-            if (state.raceState === 'racing' && state.reactionTime === null) {
-                let calculatedReaction = (performance.now() - state.startTime) / 1000;
-                state.reactionTime = calculatedReaction;
-                
-                if (calculatedReaction < 0.12) {
-                    state.raceState = 'foul';
-                    state.treeStep = 7;
-                    state.logMsg = `FOUL! TOO FAST FOR GLASS! RT: ${calculatedReaction.toFixed(3)}s`;
-                    AudioEngine.playTone(220, 'sawtooth', 0.6, 0.45);
-                }
-            }
+            if (state.speed > 95) state.gear = 5;
+            else if (state.speed > 70) state.gear = 4;
+            else if (state.speed > 45) state.gear = 3;
+            else if (state.speed > 20) state.gear = 2;
+            else if (state.speed > 1) state.gear = 1;
+            else state.gear = 0; 
 
-            if (mechanicalRpm > MAX_RPM) {
-                let overRev = mechanicalRpm - MAX_RPM;
-                let brakingForce = -400 - (overRev * 0.5); 
-                state.speed += brakingForce * dt;
-                if (state.speed < 0) state.speed = 0;
-                state.rpm = MAX_RPM; 
-                state.shiftError = true;
-                state.distance += state.speed * dt;
+            if (state.gear > 0) {
+                let ratioMult = GEAR_RATIOS[state.gear] * FINAL_DRIVE * VELOCITY_CONSTANT;
+                state.rpm = IDLE_RPM + (state.speed * ratioMult);
             } else {
-                if (state.rpm > mechanicalRpm) {
-                    state.rpm -= (state.rpm - mechanicalRpm) * 12 * dt; 
-                } else {
-                    state.rpm = mechanicalRpm;
-                }
+                state.rpm = state.rpm > IDLE_RPM ? state.rpm - 3500 * dt : IDLE_RPM;
+            }
+            if (state.rpm > REDLINE) state.rpm = REDLINE;
+
+            shifterY = (state.gear === 0) ? 1 : (state.gear % 2 !== 0 ? 0 : 2);
+            shifterX = (state.gear === 0) ? 1 : Math.floor((state.gear - 1) / 2);
+            updateShifterVisuals();
+        } 
+        else {
+            if (state.gear === 0 || clutchPressed) {
+                if (state.gas) { state.rpm += 18000 * dt; if (state.rpm > MAX_RPM) state.rpm = MAX_RPM - 150; } 
+                else { state.rpm -= 7000 * dt; if (state.rpm < IDLE_RPM) state.rpm = IDLE_RPM; }
+                state.speed = Math.max(0, state.speed - (state.speed * state.speed * 0.0004 + 4.0) * dt);
+            } else {
+                let ratioMult = GEAR_RATIOS[state.gear] * FINAL_DRIVE * VELOCITY_CONSTANT;
+                let mechanicalRpm = IDLE_RPM + (state.speed * ratioMult);
+                if (mechanicalRpm > MAX_RPM) { state.speed += -400 * dt; state.rpm = MAX_RPM; state.shiftError = true; } 
+                else { state.rpm = state.rpm > mechanicalRpm ? state.rpm - (state.rpm - mechanicalRpm) * 12 * dt : mechanicalRpm; }
 
                 let torqueFactor = 0;
-                if (state.rpm < 2000) {
-                    torqueFactor = 0.15 + ((state.rpm - IDLE_RPM) / 1000) * 0.25;
-                } else if (state.rpm >= 2000 && state.rpm < 4500) {
-                    torqueFactor = 0.40 + ((state.rpm - 2000) / 2500) * 0.55;
-                } else if (state.rpm >= 4500 && state.rpm <= 6800) {
-                    torqueFactor = 0.95 + Math.sin(((state.rpm - 4500) / 2300) * Math.PI) * 0.05;
-                } else {
-                    let overPeakPct = (state.rpm - 6800) / (MAX_RPM - 6800);
-                    torqueFactor = 1.0 - (overPeakPct * overPeakPct * 0.35);
-                }
+                if (state.rpm < 2000) torqueFactor = 0.15 + ((state.rpm - IDLE_RPM) / 1000) * 0.25;
+                else if (state.rpm < 4500) torqueFactor = 0.40 + ((state.rpm - 2000) / 2500) * 0.55;
+                else if (state.rpm <= 6800) torqueFactor = 0.95 + Math.sin(((state.rpm - 4500) / 2300) * Math.PI) * 0.05;
+                else torqueFactor = 1.0 - (Math.pow((state.rpm - 6800) / (MAX_RPM - 6800), 2) * 0.35);
 
-                // Wheelspin logic for U-2 Squeal synthesizer
+                // 1st Gear Launch Wheelspin
                 if (state.gear === 1 && state.gas && state.rpm > 3200 && state.speed < 55) {
                     isTireSpinning = true;
+                    state.carSmokeTimer += dt;
+                    if (state.carSmokeTimer > 0.04) {
+                        state.carSmokeTimer = 0;
+                        spawnCarTireSmoke(1);
+                    }
                 }
 
-                // DUAL-INPUT GAIN CALIBRATOR (2.5 Multiplier for Touchscreen)
-                const TOUCH_HP_SCALE = 2.5;
-                let touchMultiplier = (state.gasSource === 'touch') ? TOUCH_HP_SCALE : 1.0;
-
-                let nosBoost = (state.nosEngaged || (state.nosArmed && state.gas)) ? 2.5 : 1.0; 
-                const MONSTER_HP_SCALE = 45.0; 
-
-                let engineForce = 0;
-                if (state.gas) {
-                    engineForce = torqueFactor * GEAR_RATIOS[state.gear] * nosBoost * MONSTER_HP_SCALE * touchMultiplier;
-                }
-
+                let engineForce = state.gas ? (torqueFactor * GEAR_RATIOS[state.gear] * 45.0) : 0;
                 let aeroDrag = state.speed * state.speed * 0.0005;
-                let mechanicalFriction = 8.0;
-                let engineBraking = state.gas ? 0 : 40.0;
-
-                let netForce = engineForce - (aeroDrag + mechanicalFriction + engineBraking);
-                if (state.speed === 0 && netForce <= 0) netForce = 0;
-
-                state.speed += netForce * dt;
-                if (state.speed < 0) state.speed = 0;
-                state.distance += state.speed * dt;
+                state.speed = Math.max(0, state.speed + (engineForce - (aeroDrag + 8.0 + (state.gas ? 0 : 40.0))) * dt);
             }
         }
 
-        // ================= UNIFIED OMNIPRESENT AI VEHICLE PROCESSOR =================
-        let aiGear = 1;
-        if (state.time > 1.2) aiGear = 2;
-        if (state.time > 2.6) aiGear = 3;
-        if (state.time > 4.2) aiGear = 4;
-        if (state.time > 6.2) aiGear = 5;
+        state.distance += state.speed * dt;
 
-        if (state.raceState === 'racing' || state.raceState === 'finished') {
-            state.time = (performance.now() - state.startTime) / 1000;
-        }
+        if (state.missionState !== 'idle') {
+            state.time += dt;
 
-        if (state.raceState === 'racing' || (state.raceState === 'finished' && !state.aiFinished)) {
-            let aiAcc = (80.0 / aiGear) - (state.aiSpeed * 0.065);
-            
-            if ((state.time > 1.15 && state.time < 1.25) || (state.time > 2.55 && state.time < 2.65) || 
-                (state.time > 4.15 && state.time < 4.25) || (state.time > 6.15 && state.time < 6.25)) {
-                aiAcc = -10; 
+            if (state.missionState === 'failed') {
+                state.planeSpeed += 70 * dt;      
+                state.planeAltitude += 28 * dt;   
+                state.planeDistance += state.planeSpeed * dt;
             }
-            state.aiSpeed += aiAcc * dt;
-        } else if (state.aiFinished || state.raceState === 'foul') {
-            let aiAirDrag = state.aiSpeed * state.aiSpeed * 0.0005;
-            state.aiSpeed -= (aiAirDrag + 15.0) * dt;
-        } else {
-            state.aiSpeed = 0;
-        }
+            else {
+                state.planeDistance += state.planeSpeed * dt;
 
-        if (state.aiSpeed < 0) state.aiSpeed = 0;
+                if (state.planeDistance < 2500) {
+                    let progress = state.planeDistance / 2500;
+                    state.planeAltitude = 55 - (progress * 55); 
+                    state.planeSpeed = 135 - (progress * 15);   
+                    
+                    for (let c of ALT_CALLOUTS) {
+                        if (state.planeAltitude <= c.alt && !state.calledAlts.has(c.alt)) {
+                            state.calledAlts.add(c.alt);
+                            triggerRadioCall(c.text, c.duration, 'spotter');
+                            break;
+                        }
+                    }
+                } else {
+                    if (state.planeAltitude > 0) {
+                        state.planeAltitude = 0; state.planeSpeed = 120;
+                        state.autoPlay = true; 
+                        
+                        if (!state.calledAlts.has(0)) {
+                            state.calledAlts.add(0);
+                            triggerRadioCall("RADIO: TOUCHDOWN, ROLL OUT!", 3.0, 'spotter');
+                        }
+                        
+                        AudioEngine.playTone(330, 'sine', 0.2, 0.4);
+                        for (let i = 0; i < 6; i++) {
+                            state.smokePuffs.push({
+                                d: state.planeDistance,
+                                laneOffset: 0,
+                                xOffset: (Math.random() - 0.5) * 16,
+                                yOffset: 0,
+                                life: 1.0, maxLife: 1.0,
+                                startSize: 12, endSize: 47
+                            });
+                        }
+                    }
 
-        if (state.raceState === 'racing' || state.raceState === 'finished' || state.raceState === 'foul') {
-            state.aiDistance += state.aiSpeed * dt;
-        }
-
-        // ================= TRAP LINE WIN EVALUATIONS & INDEPENDENT ET RECORDING =================
-        if (state.raceState === 'racing' || state.raceState === 'finished') {
-            if (state.distance >= 1320 && !state.playerFinished) {
-                state.playerFinished = true;
-                state.playerEt = state.time;
-                if (state.raceState === 'racing') {
-                    state.raceState = 'finished';
-                    state.logMsg = "PLAYER WINS! (92 NOTCHBACK)";
-                    AudioEngine.playTone(660, 'sine', 0.5, 0.3);
+                    let rolloutProgress = (state.planeDistance - 2500) / 4000;
+                    if (rolloutProgress < 1.0) {
+                        state.planeSpeed = 120 * (1.0 - rolloutProgress);
+                        if (state.planeSpeed < 8) state.planeSpeed = 8;
+                    } else {
+                        state.planeSpeed = 0;
+                        state.planeTilt += (14 - state.planeTilt) * 4 * dt; 
+                        if (state.missionState === 'chase') {
+                            state.missionState = 'secured'; state.logMsg = "TACTICAL OBJECTIVE SECURED: FLIGHT SYSTEM INTEGRATED!";
+                            AudioEngine.playTone(660, 'sine', 0.5, 0.3);
+                        }
+                    }
                 }
             }
 
-            if (state.aiDistance >= 1320 && !state.aiFinished) {
-                state.aiFinished = true;
-                state.aiEt = state.time;
-                if (state.raceState === 'racing') {
-                    state.raceState = 'finished';
-                    state.logMsg = "AI WINS! (84 FIREBIRD)";
-                    AudioEngine.playTone(330, 'sine', 0.5, 0.3);
+            if (state.missionState === 'approaching') {
+                if (state.planeDistance >= state.distance) {
+                    state.missionState = 'chase';
+                    state.chaseStartTime = state.time; 
+                    triggerRadioCall("RADIO: ACCELERATE TO MATCH PACE...", 2.4, 'spotter');
+                    AudioEngine.playTone(880, 'sine', 0.15, 0.3);
+                }
+            }
+
+            // --- PROXIMITY ABORT MONITORING & DIALOGUE SEQUENCING ---
+            if (state.missionState === 'chase' && !state.autoPlay && !state.abortTriggered) {
+                let separation = state.planeDistance - state.distance;
+
+                if (separation > 45) {
+                    state.hasEstablishedChase = true;
+                }
+
+                if (state.hasEstablishedChase && separation >= 25 && separation < 40) {
+                    state.closeYellowTimer += dt;
+                } else {
+                    state.closeYellowTimer = 0;
+                }
+
+                let isCloseYellowAbort = state.hasEstablishedChase && state.closeYellowTimer >= 2.0;
+                let isRedZoneAbort = state.hasEstablishedChase && separation < 25;
+                let isFarZoneAbort = (state.time - state.chaseStartTime > 12.0) && (separation > 160);
+
+                if (isCloseYellowAbort || isRedZoneAbort || isFarZoneAbort) {
+                    state.abortTriggered = true;
+                    state.missionState = 'failed';
+                    state.logMsg = isRedZoneAbort ? "CRITICAL PROXIMITY: DANGER ZONE PENETRATED! GO-AROUND!" : "MISSION FAILURE: ABORT EXECUTED BY COMMAND!";
+
+                    triggerRadioCall("RADIO: ABORT! ABORT! ABORT!", 2.2, 'spotter');
+                    AudioEngine.playTone(140, 'sawtooth', 0.6, 0.4);
+
+                    setTimeout(() => {
+                        if (state.missionState === 'failed') {
+                            triggerRadioCall("RADIO: LANDING ABORTED, GOING AROUND.", 2.8, 'pilot');
+                        }
+                    }, 2300);
                 }
             }
         }
 
+        state.smokePuffs.forEach(p => { p.life -= dt * 1.5; });
+        state.smokePuffs = state.smokePuffs.filter(p => p.life > 0);
         AudioEngine.update(state.rpm, state.speed, state.gas, isTireSpinning);
     }
 
@@ -1066,318 +924,378 @@
         UI.hudDist.innerText = Math.floor(state.distance) + " ft";
         UI.hudGear.innerText = state.gear !== 0 ? state.gear : (state.shiftError ? state.attemptedGear : "N");
         UI.hudRpm.innerText = Math.floor(state.rpm);
-        UI.hudMph.innerText = Math.floor(state.speed * 0.681818); 
-        UI.hudAiDist.innerText = Math.floor(state.aiDistance) + " ft";
+        UI.hudMph.innerText = Math.floor(state.speed * 0.681818);
 
-        if (state.playerEt !== null) {
-            UI.playerEtBox.style.display = 'block';
-            UI.playerEtVal.innerText = state.playerEt.toFixed(3) + "s";
+        if (state.missionState === 'chase') {
+            let sep = state.planeDistance - state.distance;
+            UI.hudBuffer.innerText = Math.floor(sep) + " ft";
+            UI.hudBuffer.className = (sep > 110 || sep < 35) ? 'hud-alert' : 'hud-val';
         } else {
-            UI.playerEtBox.style.display = 'none';
-        }
-
-        if (state.aiEt !== null) {
-            UI.aiEtBox.style.display = 'block';
-            UI.aiEtVal.innerText = state.aiEt.toFixed(3) + "s";
-        } else {
-            UI.aiEtBox.style.display = 'none';
-        }
-
-        if (state.reactionTime !== null) {
-            UI.reactionBox.style.display = 'block';
-            if (state.reactionTime < 0) {
-                UI.rtVal.innerText = "JUMPED START";
-                UI.rtVal.style.color = '#ff3333';
-            } else {
-                UI.rtVal.innerText = state.reactionTime.toFixed(3) + "s";
-                UI.rtVal.style.color = state.reactionTime < 0.25 ? '#ff3333' : '#00ffcc';
-            }
-        } else {
-            UI.reactionBox.style.display = 'none';
+            UI.hudBuffer.innerText = state.missionState.toUpperCase();
+            UI.hudBuffer.className = state.missionState === 'secured' ? 'hud-val' : (state.missionState === 'failed' ? 'hud-alert' : '');
         }
     }
 
-    function draw() {
-        let horizon = canvas.height * 0.45;
+    function drawPerspectiveTrapezoid(dStart, dEnd, laneLeft, laneRight, fillStyle, strokeStyle = null) {
+        let p1 = getProjection(dStart, laneLeft);
+        let p2 = getProjection(dEnd, laneLeft);
+        let p3 = getProjection(dEnd, laneRight);
+        let p4 = getProjection(dStart, laneRight);
+
+        if (p1.visible || p2.visible || p3.visible || p4.visible) {
+            ctx.fillStyle = fillStyle; ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y);
+            ctx.closePath(); ctx.fill();
+            if (strokeStyle) { ctx.strokeStyle = strokeStyle; ctx.lineWidth = 1 * p1.scale; ctx.stroke(); }
+        }
+    }
+
+    function drawPerspectiveLineSegment(dStart, dEnd, laneOffset, strokeStyle, width) {
+        let pStart = getProjection(dStart, laneOffset);
+        let pEnd = getProjection(dEnd, laneOffset);
+        if (pStart.visible && pEnd.visible) {
+            ctx.strokeStyle = strokeStyle; ctx.lineWidth = width * pEnd.scale; ctx.beginPath();
+            ctx.moveTo(pStart.x, pStart.y); ctx.lineTo(pEnd.x, pEnd.y);
+            ctx.stroke(); 
+        }
+    }
+
+    function drawU2DragonLady(x, y, scale, gearDown) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+
+        let wingY = -3;
+        let wingThickness = 2.4;
+        let wingSpan = 190;
+        let stabY = 2;
+        let stabSpan = 38;
+
+        let bodyGrad = ctx.createLinearGradient(-10, 0, 10, 0);
+        bodyGrad.addColorStop(0, '#050508');
+        bodyGrad.addColorStop(0.3, '#1d1d26');
+        bodyGrad.addColorStop(0.7, '#13131a'); 
+        bodyGrad.addColorStop(1, '#020204');
         
-        let skyGrad = ctx.createLinearGradient(0,0,0,horizon);
-        skyGrad.addColorStop(0, '#020208'); skyGrad.addColorStop(1, '#181326');
-        ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, canvas.width, horizon);
-
-        ctx.fillStyle = '#1b1b1b'; ctx.fillRect(0, horizon, canvas.width, canvas.height - horizon);
-
-        let pFarLeft = getProjection(state.distance + 1000, -2.0);   
-        let pCloseLeft = getProjection(state.distance, -2.0);        
-        let pFarRight = getProjection(state.distance + 1000, 2.0);   
-        let pCloseRight = getProjection(state.distance, 2.0);        
-
-        ctx.fillStyle = '#0f0f14';
+        ctx.fillStyle = bodyGrad;
         ctx.beginPath();
-        ctx.moveTo(pFarLeft.x, horizon); ctx.lineTo(pCloseLeft.x, canvas.height);
-        ctx.lineTo(pCloseRight.x, canvas.height); ctx.lineTo(pFarRight.x, horizon);
+        ctx.moveTo(-7, -2);
+        ctx.lineTo(-3, -12);
+        ctx.lineTo(3, -12);
+        ctx.lineTo(7, -2);
         ctx.closePath(); ctx.fill();
 
-        ctx.strokeStyle = '#444';
-        let dashLength = 16;
-        let dashGap = 20;
-        let stride = dashLength + dashGap;
-        let lineStart = Math.floor(state.distance / stride) * stride - stride;
+        let wingGrad = ctx.createLinearGradient(0, wingY - 2, 0, wingY + 2);
+        wingGrad.addColorStop(0, '#2b2b3a');
+        wingGrad.addColorStop(1, '#06060a');
+        
+        ctx.fillStyle = wingGrad;
+        ctx.beginPath();
+        ctx.moveTo(-wingSpan, wingY + 3);
+        ctx.lineTo(0, wingY);
+        ctx.lineTo(wingSpan, wingY + 3);
+        ctx.lineTo(wingSpan, wingY + 3 - wingThickness);
+        ctx.lineTo(0, wingY - wingThickness);
+        ctx.lineTo(-wingSpan, wingY + 3 - wingThickness);
+        ctx.closePath(); ctx.fill();
+        
+        ctx.strokeStyle = '#0d0d14'; ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(-50, wingY + 1); ctx.lineTo(-50, wingY - 1);
+        ctx.moveTo(-110, wingY + 2); ctx.lineTo(-110, wingY);
+        ctx.moveTo(50, wingY + 1); ctx.lineTo(50, wingY - 1);
+        ctx.moveTo(110, wingY + 2); ctx.lineTo(110, wingY);
+        ctx.stroke();
 
-        for (let d = lineStart; d < state.distance + 800; d += stride) {
-            let pStartLeft = getProjection(d + dashLength, -1.0);
-            let pEndLeft = getProjection(d, -1.0);
-            let pStartRight = getProjection(d + dashLength, 1.0);
-            let pEndRight = getProjection(d, 1.0);
+        ctx.fillStyle = '#0a0a0f';
+        ctx.beginPath();
+        ctx.moveTo(0, stabY - 2);
+        ctx.lineTo(-stabSpan, stabY + 1); ctx.lineTo(-stabSpan, stabY + 3);
+        ctx.lineTo(0, stabY);
+        ctx.lineTo(stabSpan, stabY + 3); ctx.lineTo(stabSpan, stabY + 1);
+        ctx.closePath(); ctx.fill();
+        
+        let finGrad = ctx.createLinearGradient(-2, 0, 2, 0);
+        finGrad.addColorStop(0, '#1c1c28');
+        finGrad.addColorStop(1, '#050508');
+        ctx.fillStyle = finGrad;
+        ctx.beginPath();
+        ctx.moveTo(-4, -2);
+        ctx.lineTo(-1, -38);
+        ctx.lineTo(1, -38);
+        ctx.lineTo(4, -2);
+        ctx.closePath(); ctx.fill();
 
-            if (pStartLeft.visible && pEndLeft.visible) {
-                ctx.lineWidth = 2.5 * pEndLeft.scale; 
-                ctx.beginPath(); ctx.moveTo(pStartLeft.x, pStartLeft.y); ctx.lineTo(pEndLeft.x, pEndLeft.y); ctx.stroke();
-            }
-            if (pStartRight.visible && pEndRight.visible) {
-                ctx.lineWidth = 2.5 * pEndRight.scale;
-                ctx.beginPath(); ctx.moveTo(pStartRight.x, pStartRight.y); ctx.lineTo(pEndRight.x, pEndRight.y); ctx.stroke();
-            }
-        }
+        ctx.strokeStyle = '#2d2d3f'; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(0, -38); ctx.stroke();
 
-        let finishProj = getProjection(1320, 0);
-        if (finishProj.visible) {
-            let fL = getProjection(1320, -2.0);
-            let fR = getProjection(1320, 2.0);
+        ctx.fillStyle = '#111116';
+        ctx.beginPath(); ctx.arc(0, 0, 7.5, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#33333e'; ctx.lineWidth = 0.8; ctx.stroke();
 
-            ctx.fillStyle = '#e65c00'; ctx.fillRect(fL.x, finishProj.y, fR.x - fL.x, 6 * finishProj.scale);
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3 * finishProj.scale; ctx.setLineDash([4 * finishProj.scale, 4 * finishProj.scale]);
-            ctx.beginPath(); ctx.moveTo(fL.x, finishProj.y + 2); ctx.lineTo(fR.x, finishProj.y + 2); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#020204';
+        ctx.beginPath(); ctx.arc(0, 0, 5.5, 0, Math.PI * 2); ctx.fill();
 
-            ctx.strokeStyle = '#555'; ctx.lineWidth = 5 * finishProj.scale;
-            ctx.strokeRect(fL.x - 5, finishProj.y - 240 * finishProj.scale, (fR.x - fL.x) + 10, 240 * finishProj.scale);
-            ctx.fillStyle = '#ffcc00'; ctx.font = `bold ${Math.floor(13 * finishProj.scale)}px sans-serif`; ctx.textAlign = 'center';
-            ctx.fillText("1/4 MILE TRAP", finishProj.x, finishProj.y - 210 * finishProj.scale);
-        }
+        let engineGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, 5);
+        engineGlow.addColorStop(0, '#2d1405');
+        engineGlow.addColorStop(0.6, '#0f0601');
+        engineGlow.addColorStop(1, '#020204');
+        ctx.fillStyle = engineGlow;
+        ctx.beginPath(); ctx.arc(0, 0, 4.5, 0, Math.PI * 2); ctx.fill();
 
-        let wallStart = Math.floor(state.distance / 30) * 30 - 30;
-        for (let d = wallStart; d < state.distance + 700; d += 30) {
-            let p1 = getProjection(d, 0);
-            let p2 = getProjection(d + 15, 0);
-            if (p1.visible && p2.visible) {
-                ctx.fillStyle = (Math.floor(d / 30) % 2 === 0) ? '#5c5c64' : '#4c4c52';
-                ctx.beginPath();
-                ctx.moveTo(p1.x - 3 * p1.scale, p1.y);
-                ctx.lineTo(p1.x - 1 * p1.scale, p1.y - 12 * p1.scale);
-                ctx.lineTo(p2.x - 1 * p2.scale, p2.y - 12 * p2.scale);
-                ctx.lineTo(p2.x - 3 * p2.scale, p2.y);
-                ctx.closePath(); ctx.fill();
-
-                ctx.fillStyle = '#7c7c84';
-                ctx.beginPath();
-                ctx.moveTo(p1.x - 1 * p1.scale, p1.y - 12 * p1.scale);
-                ctx.lineTo(p1.x + 1 * p1.scale, p1.y - 12 * p1.scale);
-                ctx.lineTo(p2.x + 1 * p2.scale, p2.y - 12 * p2.scale);
-                ctx.lineTo(p2.x - 1 * p2.scale, p2.y - 12 * p2.scale);
-                ctx.closePath(); ctx.fill();
-            }
-        }
-
-        let aiProj = getProjection(state.aiDistance, 1);
-        if (aiProj.visible) drawOutsideFirebird(aiProj.x, aiProj.y, aiProj.scale);
-
-        let treeProj = getProjection(60, 0);
-        if (treeProj.visible) {
-            drawTree(treeProj.x, treeProj.y - 130 * treeProj.scale, treeProj.scale);
-        }
-
-        if (state.pov === 'outside') {
-            let playerProj = getProjection(state.distance, -1);
-            drawOutsideMustang(playerProj.x, playerProj.y, 1);
-        } else {
-            drawInsideCockpit();
-        }
-
-        if (state.logMsg !== "") {
-            ctx.font = 'bold 14px Courier New'; 
-            let textMetrics = ctx.measureText(state.logMsg);
-            let boxWidth = textMetrics.width + 30; 
-            let boxHeight = 40;
-            let boxX = (canvas.width - boxWidth) / 2;
-            let boxY = (canvas.height - boxHeight) / 2 - 15;
-
-            ctx.fillStyle = 'rgba(2, 2, 6, 0.92)'; ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-            ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 2; ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-            ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(state.logMsg, canvas.width * 0.5, boxY + boxHeight / 2);
-            ctx.textBaseline = 'alphabetic'; 
-        }
-    }
-
-    function drawTree(x, y, scale) {
-        ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
-        ctx.fillStyle = '#222'; ctx.fillRect(-12, -80, 24, 250);
-        ctx.strokeStyle = '#444'; ctx.strokeRect(-12, -80, 24, 250);
-
-        function drawLight(row, offset, color, lit) {
-            ctx.fillStyle = lit ? color : '#332200'; ctx.beginPath();
-            ctx.arc(offset, -70 + (row * 14), 5, 0, Math.PI * 2); ctx.fill();
-            if(lit) {
-                ctx.shadowBlur = 15; ctx.shadowColor = color; ctx.fillStyle = '#fff';
-                ctx.beginPath(); ctx.arc(offset, -70 + (row * 14), 2, 0, Math.PI * 2); ctx.fill();
-                ctx.shadowBlur = 0; 
-            }
-        }
-        drawLight(0, -6, '#fff', state.treeStep >= 1); drawLight(0, 6, '#fff', state.treeStep >= 1);   
-        drawLight(1, -6, '#fff', state.treeStep >= 2); drawLight(1, 6, '#fff', state.treeStep >= 2);   
-        drawLight(2, -6, '#ffaa00', state.treeStep >= 3); drawLight(2, 6, '#ffaa00', state.treeStep >= 3);
-        drawLight(3, -6, '#ffaa00', state.treeStep >= 4); drawLight(3, 6, '#ffaa00', state.treeStep >= 4);
-        drawLight(4, -6, '#ffaa00', state.treeStep >= 5); drawLight(4, 6, '#ffaa00', state.treeStep >= 5);
-        drawLight(5, -6, '#00ff00', state.treeStep === 6); drawLight(5, 6, '#00ff00', state.treeStep === 6);
-        drawLight(6, 0, '#ff0000', state.treeStep === 7); 
         ctx.restore();
     }
 
     function drawOutsideMustang(x, y, scale) {
         ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
         let w = 110;
-        ctx.fillStyle = '#050505'; ctx.fillRect(-12, -22, 24, 16);
-        ctx.strokeStyle = '#cc0000'; ctx.strokeRect(-12, -22, 24, 16);
-
-        ctx.fillStyle = '#b30000'; ctx.beginPath();
-        ctx.moveTo(-w/2, 0); ctx.lineTo(-w/2 + 4, -25); ctx.lineTo(-w/3, -32);
-        ctx.lineTo(w/3, -32); ctx.lineTo(w/2 - 4, -25); ctx.lineTo(w/2, 0);
-        ctx.closePath(); ctx.fill();
-
-        ctx.fillStyle = '#111'; ctx.beginPath();
-        ctx.moveTo(-w/3 + 4, -32); ctx.lineTo(-w/4, -55); ctx.lineTo(w/4, -55); ctx.lineTo(w/3 - 4, -32);
-        ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#b30000'; ctx.lineWidth = 2; ctx.stroke();
-
-        ctx.fillStyle = '#1c252e'; ctx.beginPath();
-        ctx.moveTo(-w/3 + 8, -34); ctx.lineTo(-w/4 + 3, -52); ctx.lineTo(w/4 - 3, -52); ctx.lineTo(w/3 - 8, -34);
-        ctx.closePath(); ctx.fill();
-
+        ctx.fillStyle = '#050505'; ctx.fillRect(-12, -22, 24, 16); ctx.strokeStyle = '#cc0000'; ctx.strokeRect(-12, -22, 24, 16);
+        ctx.fillStyle = '#b30000'; ctx.beginPath(); ctx.moveTo(-w/2, 0); ctx.lineTo(-w/2 + 4, -25); ctx.lineTo(-w/3, -32); ctx.lineTo(w/3, -32); ctx.lineTo(w/2 - 4, -25); ctx.lineTo(w/2, 0); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(-w/3 + 4, -32); ctx.lineTo(-w/4, -55); ctx.lineTo(w/4, -55); ctx.lineTo(w/3 - 4, -32); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#b30000'; ctx.lineWidth = 2; ctx.stroke();
         ctx.fillStyle = '#200'; ctx.fillRect(-w/2 + 8, -20, 26, 12); ctx.fillRect(w/2 - 34, -20, 26, 12);
-        ctx.fillStyle = '#ff0000'; ctx.fillRect(-w/2 + 10, -18, 22, 3); ctx.fillRect(-w/2 + 10, -11, 22, 3);
-        ctx.fillRect(w/2 - 32, -18, 22, 3); ctx.fillRect(w/2 - 32, -11, 22, 3);
-
+        ctx.fillStyle = '#ff0000'; ctx.fillRect(-w/2 + 10, -18, 22, 3); ctx.fillRect(w/2 - 32, -18, 22, 3);
         ctx.fillStyle = '#0a0a0a'; ctx.fillRect(-w/2 + 2, 0, 22, 18); ctx.fillRect(w/2 - 24, 0, 22, 18);
-        if (state.nosEngaged || (state.nosArmed && state.gas)) {
-            ctx.fillStyle = 'rgba(0, 220, 255, 0.75)';
-            for (let i = 0; i < 4; i++) {
-                ctx.beginPath(); ctx.arc(-w/3 - (Math.random()*12), -38 - (Math.random()*8), 3 + Math.random()*5, 0, Math.PI*2);
-                ctx.arc(w/3 + (Math.random()*12), -38 - (Math.random()*8), 3 + Math.random()*5, 0, Math.PI*2); ctx.fill();
-            }
-        }
         ctx.restore();
     }
 
-    function drawOutsideFirebird(x, y, scale) {
-        ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
-        let w = 114; 
-        ctx.fillStyle = '#2b2e33'; ctx.beginPath();
-        ctx.moveTo(-w/2, 0); ctx.lineTo(-w/2 + 2, -20); ctx.lineTo(-w/2 + 12, -26);
-        ctx.lineTo(w/2 - 12, -26); ctx.lineTo(w/2 - 2, -20); ctx.lineTo(w/2, 0);
+    // --- MODERN GLASS COCKPIT HUD TAPE GAUGES ---
+    function drawBufferTape(x, y, width, height) {
+        ctx.save();
+        ctx.translate(x, y);
+
+        ctx.fillStyle = 'rgba(5, 8, 15, 0.45)';
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = 'rgba(51, 68, 85, 0.7)'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(0, 0, width, height);
+
+        ctx.fillStyle = '#88aacc'; ctx.font = '9px Courier New'; ctx.textAlign = 'center';
+        ctx.fillText('BUFFER', width / 2, -5);
+
+        let ribbonX = 8;
+        let ribbonWidth = 8;
+        let ribbonHeight = height - 16;
+        let ribbonY = 8;
+
+        let separation = state.planeDistance - state.distance;
+        let minSep = 0, maxSep = 180;
+
+        let rGrad = ctx.createLinearGradient(0, ribbonY, 0, ribbonY + ribbonHeight);
+        rGrad.addColorStop(0.0, 'rgba(255, 34, 34, 0.85)'); 
+        rGrad.addColorStop(0.18, 'rgba(255, 34, 34, 0.85)');
+        rGrad.addColorStop(0.22, 'rgba(255, 204, 0, 0.85)'); 
+        rGrad.addColorStop(0.32, 'rgba(255, 204, 0, 0.85)');
+        rGrad.addColorStop(0.38, 'rgba(0, 255, 102, 0.85)');
+        rGrad.addColorStop(0.68, 'rgba(0, 255, 102, 0.85)');
+        rGrad.addColorStop(0.74, 'rgba(255, 204, 0, 0.85)'); 
+        rGrad.addColorStop(0.84, 'rgba(255, 204, 0, 0.85)');
+        rGrad.addColorStop(0.88, 'rgba(255, 34, 34, 0.85)'); 
+        rGrad.addColorStop(1.0, 'rgba(255, 34, 34, 0.85)');
+
+        ctx.fillStyle = rGrad;
+        ctx.fillRect(ribbonX, ribbonY, ribbonWidth, ribbonHeight);
+        ctx.strokeStyle = 'rgba(17, 17, 17, 0.6)'; ctx.lineWidth = 0.8;
+        ctx.strokeRect(ribbonX, ribbonY, ribbonWidth, ribbonHeight);
+
+        let clampSep = Math.max(minSep, Math.min(maxSep, separation));
+        let norm = 1 - ((clampSep - minSep) / (maxSep - minSep)); 
+        let pointerY = ribbonY + norm * ribbonHeight;
+
+        ctx.fillStyle = '#00ffcc';
+        ctx.beginPath();
+        ctx.moveTo(ribbonX + ribbonWidth + 2, pointerY);
+        ctx.lineTo(ribbonX + ribbonWidth + 9, pointerY - 5);
+        ctx.lineTo(ribbonX + ribbonWidth + 9, pointerY + 5);
         ctx.closePath(); ctx.fill();
 
-        ctx.fillStyle = '#181a1c'; ctx.fillRect(-w/2 + 10, -30, w - 20, 5);
+        let boxX = ribbonX + ribbonWidth + 10;
+        let boxY = pointerY - 7;
+        let boxW = width - boxX - 3;
+        let boxH = 14;
 
-        ctx.fillStyle = '#0f1115'; ctx.beginPath();
-        ctx.moveTo(-w/2 + 14, -26); ctx.lineTo(-w/4 + 2, -50);
-        ctx.lineTo(w/4 - 2, -50); ctx.lineTo(w/2 - 14, -26);
-        ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#2b2e33'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'; ctx.fillRect(boxX, boxY, boxW, boxH);
+        ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 1; ctx.strokeRect(boxX, boxY, boxW, boxH);
 
-        ctx.fillStyle = '#111'; ctx.fillRect(-w/2 + 8, -19, w - 16, 11);
-        ctx.fillStyle = '#990000'; ctx.fillRect(-w/2 + 14, -16, 34, 5); ctx.fillRect(w/2 - 48, -16, 34, 5);
-        ctx.fillStyle = '#080808'; ctx.fillRect(-w/2 + 4, 0, 24, 16); ctx.fillRect(w/2 - 28, 0, 24, 16);
+        ctx.fillStyle = '#00ffcc'; ctx.font = 'bold 9px Courier New'; ctx.textAlign = 'center';
+        ctx.fillText(Math.floor(separation) + 'f', boxX + boxW / 2, boxY + 10);
+
         ctx.restore();
     }
 
-    // --- COCKPIT POV DRAWING WITH NITROUS PURGE VISUALS ---
-    function drawInsideCockpit() {
-        let dashY = canvas.height * 0.72; 
-        
-        ctx.fillStyle = '#141619'; ctx.fillRect(0, dashY, canvas.width, canvas.height - dashY); ctx.fillRect(0, 0, canvas.width, 30); 
-        
-        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(canvas.width * 0.08, 30); ctx.lineTo(canvas.width * 0.03, dashY); ctx.lineTo(0, dashY); ctx.closePath(); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width * 0.92, 30); ctx.lineTo(canvas.width * 0.97, dashY); ctx.lineTo(canvas.width, dashY); ctx.closePath(); ctx.fill();
+    function drawAltimeterTape(x, y, width, height) {
+        ctx.save();
+        ctx.translate(x, y);
 
-        // COCKPIT NITROUS VISUAL PURGE EFFECT
-        if (state.nosEngaged || (state.nosArmed && state.gas)) {
-            // Blue atmospheric windshield glow
-            ctx.fillStyle = 'rgba(0, 180, 255, 0.12)';
-            ctx.fillRect(0, 30, canvas.width, dashY - 30);
+        ctx.fillStyle = 'rgba(5, 8, 15, 0.45)';
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = 'rgba(51, 68, 85, 0.7)'; ctx.lineWidth = 1.2;
+        ctx.strokeRect(0, 0, width, height);
 
-            // Plumes of nitrous steam shooting up from hood cowls
-            ctx.save();
-            ctx.fillStyle = 'rgba(180, 230, 255, 0.65)';
-            for (let i = 0; i < 5; i++) {
-                let px1 = canvas.width * 0.28 + (Math.random() - 0.5) * 35;
-                let py1 = dashY - 15 - (Math.random() * 85);
-                let sz1 = 4 + Math.random() * 12;
-                ctx.beginPath(); ctx.arc(px1, py1, sz1, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#88aacc'; ctx.font = '8px Courier New'; ctx.textAlign = 'center';
+        ctx.fillText('ALT(FT)', width / 2, -4);
 
-                let px2 = canvas.width * 0.72 + (Math.random() - 0.5) * 35;
-                let py2 = dashY - 15 - (Math.random() * 85);
-                let sz2 = 4 + Math.random() * 12;
-                ctx.beginPath(); ctx.arc(px2, py2, sz2, 0, Math.PI * 2); ctx.fill();
+        let tapeX = width - 8;
+        let tapeY = 6;
+        let tapeHeight = height - 12;
+
+        let maxAlt = 60;
+        let alt = state.planeAltitude;
+
+        ctx.strokeStyle = '#556677'; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(tapeX, tapeY); ctx.lineTo(tapeX, tapeY + tapeHeight);
+        ctx.stroke();
+
+        for (let a = 0; a <= maxAlt; a += 10) {
+            let norm = 1 - (a / maxAlt); 
+            let ty = tapeY + norm * tapeHeight;
+
+            ctx.strokeStyle = '#8899aa';
+            ctx.beginPath();
+            ctx.moveTo(tapeX - 4, ty); ctx.lineTo(tapeX, ty);
+            ctx.stroke();
+
+            ctx.fillStyle = '#aaccdd'; ctx.font = '7px Courier New'; ctx.textAlign = 'right';
+            ctx.fillText(a.toString(), tapeX - 6, ty + 2.5);
+        }
+
+        let clampAlt = Math.max(0, Math.min(maxAlt, alt));
+        let normAlt = 1 - (clampAlt / maxAlt);
+        let pointerY = tapeY + normAlt * tapeHeight;
+
+        ctx.fillStyle = '#00ffcc';
+        ctx.beginPath();
+        ctx.moveTo(tapeX - 1, pointerY);
+        ctx.lineTo(tapeX - 6, pointerY - 4);
+        ctx.lineTo(tapeX - 6, pointerY + 4);
+        ctx.closePath(); ctx.fill();
+
+        let boxW = 24;
+        let boxH = 12;
+        let boxX = tapeX - 31;
+        let boxY = pointerY - 6;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'; ctx.fillRect(boxX, boxY, boxW, boxH);
+        ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 0.8; ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+        ctx.fillStyle = '#00ffcc'; ctx.font = 'bold 8px Courier New'; ctx.textAlign = 'center';
+        ctx.fillText(Math.ceil(alt) + 'f', boxX + boxW / 2, boxY + 9);
+
+        ctx.restore();
+    }
+
+    function draw() {
+        let horizon = canvas.height * 0.45;
+        let sky = ctx.createLinearGradient(0,0,0,horizon);
+        sky.addColorStop(0, '#050a12'); sky.addColorStop(1, '#1b263b');
+        ctx.fillStyle = sky; ctx.fillRect(0, 0, canvas.width, horizon);
+
+        ctx.fillStyle = '#232329'; ctx.fillRect(0, horizon, canvas.width, canvas.height - horizon);
+
+        // Seamless Runway Projection overdraw
+        drawPerspectiveTrapezoid(state.distance - 60, state.distance + 1100, -2.2, 2.2, '#3a3a42');
+
+        let totalWidth = 3.6; let numBars = 12; let barSpan = totalWidth / (numBars * 2 - 1);
+        for (let i = 0; i < numBars; i++) {
+            let bLeft = -1.8 + (i * 2 * barSpan); let bRight = bLeft + barSpan;
+            drawPerspectiveTrapezoid(0, 45, bLeft, bRight, '#ffffff');
+        }
+
+        let nProj = getProjection(70, 0);
+        if (nProj.visible) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.88)'; ctx.lineWidth = 6 * nProj.scale; ctx.lineCap = "round";
+            let p2_1 = getProjection(78, -0.25), p2_2 = getProjection(78, -0.05), p2_3 = getProjection(74, -0.05);
+            let p2_4 = getProjection(70, -0.25), p2_5 = getProjection(70, -0.05);
+            ctx.beginPath(); ctx.moveTo(p2_1.x, p2_1.y); ctx.lineTo(p2_2.x, p2_2.y); ctx.lineTo(p2_3.x, p2_3.y); ctx.lineTo(p2_4.x, p2_4.y); ctx.lineTo(p2_5.x, p2_5.y); ctx.stroke();
+            let p8_1 = getProjection(78, 0.05),  p8_2 = getProjection(78, 0.25),  p8_3 = getProjection(70, 0.25);
+            let p8_4 = getProjection(70, 0.05),  p8_5 = getProjection(74, 0.05),  p8_6 = getProjection(74, 0.25);
+            ctx.beginPath(); ctx.moveTo(p8_1.x, p8_1.y); ctx.lineTo(p8_2.x, p8_2.y); ctx.lineTo(p8_3.x, p8_3.y); ctx.lineTo(p8_4.x, p8_4.y); ctx.lineTo(p8_1.x, p8_1.y); ctx.moveTo(p8_5.x, p8_5.y); ctx.lineTo(p8_6.x, p8_6.y); ctx.stroke();
+            ctx.lineCap = "butt";
+        }
+
+        for (let d = Math.floor((state.distance - 60) / 40) * 40; d < state.distance + 800; d += 40) {
+            drawPerspectiveLineSegment(d, d + 18, -1.0, '#555', 3);
+            drawPerspectiveLineSegment(d, d + 18, 1.0, '#555', 3);
+        }
+
+        // ================= MULTI-LANE SPATIAL SMOKE PARTICLES =================
+        ctx.save();
+        state.smokePuffs.forEach(p => {
+            let proj = getProjection(p.d, p.laneOffset || 0);
+            if (proj.visible) {
+                let lifeRatio = p.life / (p.maxLife || 1.0);
+                let progress = 1.0 - lifeRatio;
+                let startSz = p.startSize || 12;
+                let endSz = p.endSize || 47;
+                let sz = (startSz + progress * (endSz - startSz)) * proj.scale;
+
+                ctx.fillStyle = `rgba(220, 220, 230, ${lifeRatio * 0.42})`; 
+                ctx.beginPath();
+                ctx.arc(
+                    proj.x + (p.xOffset || 0) * proj.scale, 
+                    proj.y + (p.yOffset || 0) * proj.scale, 
+                    sz, 0, Math.PI * 2
+                ); 
+                ctx.fill();
             }
-            ctx.restore();
+        });
+        ctx.restore();
+
+        // ================= GROUND DROP SHADOW INTERCEPT =================
+        if (state.missionState !== 'idle') {
+            let shadowGroundProj = getProjection(state.planeDistance, 0);
+            if (shadowGroundProj.visible) {
+                ctx.save();
+                ctx.translate(shadowGroundProj.x, shadowGroundProj.y);
+                let shadowScale = shadowGroundProj.scale * 7.2; 
+                ctx.scale(shadowScale, shadowScale * 0.32);
+
+                let shadowAlpha = Math.max(0.04, 0.72 - (state.planeAltitude / 60) * 0.52);
+                let blurRadius = Math.max(1, state.planeAltitude * 0.65);
+                
+                ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
+                ctx.shadowColor = `rgba(0, 0, 0, ${shadowAlpha})`;
+                ctx.shadowBlur = blurRadius;
+
+                ctx.beginPath();
+                ctx.ellipse(0, -6, 175, 8, 0, 0, Math.PI * 2); 
+                ctx.ellipse(0, 2, 8, 32, 0, 0, Math.PI * 2);    
+                ctx.fill();
+                ctx.restore();
+            }
         }
 
-        ctx.fillStyle = '#08090a'; ctx.fillRect(canvas.width * 0.56, 30, 110, 26);
-        ctx.strokeStyle = '#333'; ctx.strokeRect(canvas.width * 0.56, 30, 110, 26);
-        ctx.fillStyle = '#223'; ctx.fillRect(canvas.width * 0.58, 33, 102, 20);
-
-        let clusterLeft = canvas.width * 0.5 - 130; let clusterWidth = 260;
-        ctx.fillStyle = '#1c1e22'; ctx.beginPath(); ctx.moveTo(clusterLeft, dashY); ctx.lineTo(clusterLeft + 15, dashY - 45); ctx.lineTo(clusterLeft + clusterWidth - 15, dashY - 45); ctx.lineTo(clusterLeft + clusterWidth, dashY); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5; ctx.stroke();
-        ctx.fillStyle = '#0a0b0d'; ctx.fillRect(clusterLeft + 18, dashY - 39, clusterWidth - 36, 39);
-
-        function drawCockpitGauge(cx, cy, radius, value, maxVal, label, color) {
-            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#2d3035'; ctx.lineWidth = 1.5; ctx.stroke();
-            ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath();
-            let startAng = Math.PI * 0.8; let endAng = Math.PI * 2.2;
-            let currentAng = startAng + ((value / maxVal) * (endAng - startAng));
-            ctx.arc(cx, cy, radius - 3, startAng, currentAng); ctx.stroke();
-            ctx.strokeStyle = '#ff3300'; ctx.lineWidth = 1.5; ctx.beginPath();
-            ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(currentAng) * (radius - 5), cy + Math.sin(currentAng) * (radius - 5)); ctx.stroke();
-            ctx.fillStyle = '#aaa'; ctx.font = 'bold 8px Helvetica'; ctx.textAlign = 'center'; ctx.fillText(label, cx, cy + radius - 9);
+        // ================= AIRFRAME POSITION ENGINE PASS =================
+        if (state.missionState !== 'idle') {
+            let planeProj = getProjection(state.planeDistance, 0);
+            if (planeProj.visible) {
+                let altYOffset = (state.planeAltitude * 5.0) * planeProj.scale; 
+                drawU2DragonLady(planeProj.x, planeProj.y - altYOffset, planeProj.scale * 7.2, state.planeAltitude <= 3);
+            }
         }
 
-        let gaugeY = dashY - 18;
-        drawCockpitGauge(clusterLeft + 60, gaugeY, 19, state.rpm, MAX_RPM, "RPM", '#ffcc00');
-        drawCockpitGauge(clusterLeft + 125, gaugeY, 19, state.speed * 0.681818, 160, "MPH", '#00ffcc');
-        
-        ctx.fillStyle = '#151515'; ctx.fillRect(clusterLeft + 172, dashY - 28, 22, 18);
-        ctx.fillStyle = state.shiftError ? '#ff0000' : '#00ff00'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
-        ctx.fillText(state.gear !== 0 ? state.gear : (state.shiftError ? state.attemptedGear : "N"), clusterLeft + 183, dashY - 15);
+        let playerProj = getProjection(state.distance, -1);
+        drawOutsideMustang(playerProj.x, playerProj.y, 1);
 
-        // NOS Cockpit LED Light on dash
-        ctx.fillStyle = state.nosEngaged ? '#00e5ff' : (state.nosArmed ? '#ff3333' : '#112233');
-        ctx.fillRect(clusterLeft + 15, dashY - 28, 16, 10);
-        ctx.strokeStyle = '#333'; ctx.strokeRect(clusterLeft + 15, dashY - 28, 16, 10);
+        // ================= MODERN PFD GLASS COCKPIT TAPES =================
+        drawBufferTape(30, 70, 58, 100);
+        drawAltimeterTape(854, 70, 48, 80);
 
-        let lightColor = (state.rpm >= REDLINE) ? '#ff0000' : '#220000';
-        ctx.fillStyle = '#08080a'; ctx.fillRect(clusterLeft + clusterWidth - 8, dashY - 52, 22, 22); 
-        ctx.fillStyle = lightColor; ctx.beginPath(); ctx.arc(clusterLeft + clusterWidth + 3, dashY - 41, 8, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = '#444'; ctx.stroke();
-
-        let wheelX = canvas.width * 0.5 - 10; let wheelY = dashY + 32;
-        ctx.save(); ctx.strokeStyle = '#0d0d0f'; ctx.lineWidth = 11; ctx.shadowColor = '#000'; ctx.shadowBlur = 8; ctx.beginPath(); ctx.arc(wheelX, wheelY, 65, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-        ctx.fillStyle = '#1c1e22'; ctx.beginPath(); ctx.arc(wheelX, wheelY, 15, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#111'; ctx.stroke();
+        if (state.logMsg !== "") {
+            ctx.font = 'bold 13px Courier New'; let m = ctx.measureText(state.logMsg);
+            let bw = m.width + 40; let bh = 46; let bx = (canvas.width - bw) / 2; let by = (canvas.height - bh) / 2 - 10;
+            ctx.fillStyle = 'rgba(2,2,6,0.94)'; ctx.fillRect(bx, by, bw, bh);
+            ctx.strokeStyle = state.missionState === 'secured' ? '#00ffcc' : '#ff3333'; ctx.lineWidth = 2; ctx.strokeRect(bx, by, bw, bh);
+            ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center'; ctx.fillText(state.logMsg, canvas.width * 0.5, by + bh/2); ctx.textBaseline = 'alphabetic';
+        }
     }
 
-    // --- MAIN GAME LOOP ENGINE ---
-    function unifiedGameLoop() {
-        let now = performance.now();
-        let dt = (now - lastTime) / 1000;
-        lastTime = now;
-
+    function mainGameLoop() {
+        let now = performance.now(); let dt = (now - lastTime) / 1000; lastTime = now;
         if (dt > 0.1) dt = 0.1;
-
-        updatePhysics(dt);
-        updateHUD(); 
-        draw();
-
-        requestAnimationFrame(unifiedGameLoop);
+        updatePhysics(dt); updateHUD(); draw();
+        requestAnimationFrame(mainGameLoop);
     }
-
-    requestAnimationFrame(unifiedGameLoop);
+    requestAnimationFrame(mainGameLoop);
 </script>
 
 </body>
